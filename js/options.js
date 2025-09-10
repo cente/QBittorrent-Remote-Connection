@@ -48,6 +48,9 @@ class OptionsManager {
     document
       .getElementById("quickFixHttpsOnlyMode")
       ?.addEventListener("click", () => this.fixHttpsOnlyMode());
+    document
+      .getElementById("advancedDebug")
+      ?.addEventListener("click", () => this.advancedHttpsOnlyDebug());
 
     // Auto-save on input change
     this.form.addEventListener("input", () => {
@@ -825,6 +828,103 @@ class OptionsManager {
       );
       this.logDebug("Try the regular 'Test Connection' button first");
     }
+  }
+
+  async advancedHttpsOnlyDebug() {
+    const config = this.getFormData();
+    if (!config.serverUrl || !config.port) {
+      this.showStatus('Please fill in server URL and port first', 'error');
+      return;
+    }
+
+    this.clearDebugLog();
+    this.logDebug("🔬 ADVANCED HTTPS-ONLY MODE DEBUGGING");
+    this.logDebug("=====================================");
+    this.logDebug("");
+
+    const protocol = config.useHttps ? "https" : "http";
+    const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
+
+    // Environment Analysis
+    this.logDebug("🌐 Environment Analysis:");
+    this.logDebug(`📍 Extension URL: ${window.location.href}`);
+    this.logDebug(`📍 User Agent: ${navigator.userAgent}`);
+    this.logDebug(`🔒 Secure Context: ${window.isSecureContext}`);
+    this.logDebug(`🔒 Location Protocol: ${window.location.protocol}`);
+    this.logDebug(`🎯 Target URL: ${baseUrl}`);
+    this.logDebug("");
+
+    // Exception URL Analysis
+    this.logDebug("📋 HTTPS-Only Exception Analysis:");
+    this.logDebug("You should have PERMANENT exceptions for ALL of these:");
+    this.logDebug(`   • ${baseUrl}`);
+    this.logDebug(`   • ${baseUrl}/`);
+    this.logDebug(`   • http://${config.serverUrl}:${config.port}`);
+    this.logDebug(`   • http://${config.serverUrl}:${config.port}/`);
+    
+    // Try different hostname formats
+    const ip = config.serverUrl;
+    if (ip.includes('.')) {
+      this.logDebug(`   • http://${ip}:${config.port} (exact IP)`);
+    }
+    this.logDebug("");
+
+    // Multiple fetch attempts with detailed logging
+    this.logDebug("🧪 Multi-Test Fetch Analysis:");
+    
+    const tests = [
+      { name: "Basic Root", url: baseUrl, mode: "no-cors" },
+      { name: "Basic Root with Slash", url: `${baseUrl}/`, mode: "no-cors" },
+      { name: "CORS Root", url: baseUrl, mode: "cors" },
+      { name: "Version API", url: `${baseUrl}/api/v2/app/version`, mode: "cors" },
+      { name: "Same-Origin Mode", url: baseUrl, mode: "same-origin" }
+    ];
+
+    for (const test of tests) {
+      this.logDebug(`🔍 Test: ${test.name}`);
+      this.logDebug(`   URL: ${test.url}`);
+      this.logDebug(`   Mode: ${test.mode}`);
+      
+      try {
+        const response = await fetch(test.url, {
+          method: "GET",
+          mode: test.mode,
+          cache: "no-cache"
+        });
+        
+        this.logDebug(`   ✅ Success: ${response.status} ${response.statusText}`);
+        this.logDebug(`   Type: ${response.type}, Redirected: ${response.redirected}`);
+        this.logDebug(`   Final URL: ${response.url}`);
+        
+        if (test.name === "Version API" && response.ok) {
+          try {
+            const version = await response.text();
+            this.logDebug(`   🎉 VERSION: ${version.trim()}`);
+          } catch (e) {
+            this.logDebug(`   ⚠️ Could not read response text`);
+          }
+        }
+      } catch (error) {
+        this.logDebug(`   ❌ Failed: ${error.name}: ${error.message}`);
+        
+        if (error.message.includes("NetworkError")) {
+          this.logDebug(`   🚨 This is the HTTPS-Only Mode upgrade!`);
+        }
+      }
+      this.logDebug("");
+    }
+
+    // Firefox about:config suggestions
+    this.logDebug("🔧 NUCLEAR OPTIONS (last resort):");
+    this.logDebug("If exceptions don't work, try these about:config changes:");
+    this.logDebug("1. Type 'about:config' in Firefox address bar");
+    this.logDebug("2. Set these preferences to FALSE:");
+    this.logDebug("   • dom.security.https_only_mode = false");
+    this.logDebug("   • dom.security.https_only_mode_pbm = false");
+    this.logDebug("   • dom.security.https_only_mode_send_http_background_request = false");
+    this.logDebug("");
+    this.logDebug("⚠️ This disables HTTPS-Only Mode completely!");
+    this.logDebug("🔄 Restart Firefox after making changes");
   }
 }
 
