@@ -400,7 +400,7 @@ class OptionsManager {
         this.logDebug(
           "💡 Try: 1) Disable HTTPS-Only mode, 2) Add extension exception, 3) Use different CORS mode"
         );
-        
+
         // Auto-detect HTTPS-Only Mode and show solution
         this.detectAndShowHttpsOnlySolution(config);
       }
@@ -617,18 +617,20 @@ class OptionsManager {
     if (!config.useHttps) {
       this.logDebug("");
       this.logDebug("🚨 HTTPS-Only Mode Detected!");
-      this.logDebug("Firefox is blocking HTTP connections to your local server.");
+      this.logDebug(
+        "Firefox is blocking HTTP connections to your local server."
+      );
       this.logDebug("");
-      
+
       // Show prominent solution modal/alert
       this.showHttpsOnlyModal(config);
     }
   }
 
   showHttpsOnlyModal(config) {
-    const protocol = config.useHttps ? 'https' : 'http';
+    const protocol = config.useHttps ? "https" : "http";
     const serverUrl = `${protocol}://${config.serverUrl}:${config.port}`;
-    
+
     // Create modal content
     const modalHtml = `
       <div class="alert alert-warning border-warning mt-3" id="httpsOnlyAlert">
@@ -653,6 +655,14 @@ class OptionsManager {
           </div>
         </div>
         
+        <div class="row g-2 mb-3">
+          <div class="col-12">
+            <button type="button" class="btn btn-outline-secondary w-100 btn-sm" onclick="window.showManualSettingsInstructions()">
+              <i class="bi bi-list-ol me-1"></i>Show Step-by-Step Instructions
+            </button>
+          </div>
+        </div>
+        
         <div class="small">
           <strong>Quick Fix:</strong>
           <ol class="mb-2 ps-3">
@@ -670,60 +680,114 @@ class OptionsManager {
         <button type="button" class="btn-close float-end" onclick="document.getElementById('httpsOnlyAlert').remove()"></button>
       </div>
     `;
-    
+
     // Insert after debug log or status message
-    const debugLog = document.getElementById('debugLog');
-    if (debugLog && debugLog.style.display !== 'none') {
-      debugLog.insertAdjacentHTML('afterend', modalHtml);
+    const debugLog = document.getElementById("debugLog");
+    if (debugLog && debugLog.style.display !== "none") {
+      debugLog.insertAdjacentHTML("afterend", modalHtml);
     } else {
-      const statusMessage = document.getElementById('statusMessage');
-      statusMessage.insertAdjacentHTML('afterend', modalHtml);
+      const statusMessage = document.getElementById("statusMessage");
+      statusMessage.insertAdjacentHTML("afterend", modalHtml);
     }
-    
+
     // Add global functions for the buttons
+    const self = this; // Capture 'this' context for global functions
+    
     window.openFirefoxSettings = () => {
-      this.logDebug("🔧 Opening Firefox settings...");
-      try {
-        // Try to open Firefox settings page
-        window.open('about:preferences#privacy', '_blank');
-      } catch (error) {
-        this.logDebug("❌ Cannot auto-open settings. Manual navigation required.");
-        this.logDebug("📍 Go to: Firefox → Settings → Privacy & Security → HTTPS-Only Mode");
+      self.logDebug("🔧 Attempting to help you open Firefox settings...");
+      
+      // Method 1: Try to use browser.tabs API if available
+      if (typeof browser !== 'undefined' && browser.tabs) {
+        browser.tabs.create({
+          url: 'about:preferences#privacy'
+        }).then(() => {
+          self.logDebug("✅ Opened Firefox Privacy & Security settings in new tab");
+        }).catch(error => {
+          self.logDebug("⚠️ Browser API method failed, trying alternative methods...");
+          window.tryAlternativeSettingsMethod();
+        });
+      } else {
+        window.tryAlternativeSettingsMethod();
       }
     };
     
+    // Alternative method for opening settings
+    window.tryAlternativeSettingsMethod = () => {
+      self.logDebug("🔧 Using alternative method...");
+      
+      // Method 2: Try direct window.open with error handling
+      try {
+        const settingsWindow = window.open("about:preferences#privacy", "_blank");
+        if (!settingsWindow) {
+          throw new Error("Popup blocked or not supported");
+        }
+        self.logDebug("✅ Opened settings window (if popup wasn't blocked)");
+      } catch (error) {
+        self.logDebug("⚠️ Cannot auto-open settings page due to browser security restrictions");
+        window.showManualSettingsInstructions();
+      }
+    };
+    
+    // Show step-by-step manual instructions
+    window.showManualSettingsInstructions = () => {
+      self.logDebug("");
+      self.logDebug("📋 Manual Firefox Settings Instructions:");
+      self.logDebug("1️⃣ Type 'about:preferences#privacy' in Firefox address bar");
+      self.logDebug("2️⃣ OR: Firefox Menu (☰) → Settings → Privacy & Security");
+      self.logDebug("3️⃣ Scroll down to 'HTTPS-Only Mode' section");
+      self.logDebug("4️⃣ Click 'Manage Exceptions...'");
+      self.logDebug("5️⃣ Add your server URL to exceptions");
+      self.logDebug("");
+      
+      // Also try to copy the settings URL to clipboard
+      const settingsUrl = "about:preferences#privacy";
+      navigator.clipboard.writeText(settingsUrl).then(() => {
+        self.logDebug("✅ Copied settings URL to clipboard: " + settingsUrl);
+        self.logDebug("📋 Paste this in Firefox address bar");
+      }).catch(() => {
+        self.logDebug("📋 Copy this URL manually: " + settingsUrl);
+      });
+    };
+
     window.copyExceptionUrl = () => {
       const url = serverUrl;
-      navigator.clipboard.writeText(url).then(() => {
-        this.logDebug(`✅ Copied to clipboard: ${url}`);
-        this.logDebug("📋 Paste this URL in HTTPS-Only Mode exceptions");
-      }).catch(() => {
-        this.logDebug(`📋 Copy this URL manually: ${url}`);
-      });
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          self.logDebug(`✅ Copied to clipboard: ${url}`);
+          self.logDebug("📋 Paste this URL in HTTPS-Only Mode exceptions");
+        })
+        .catch(() => {
+          self.logDebug(`📋 Copy this URL manually: ${url}`);
+        });
     };
   }
 
   fixHttpsOnlyMode() {
     const config = this.getFormData();
     if (!config.serverUrl || !config.port) {
-      this.showStatus('Please fill in server URL and port first', 'error');
+      this.showStatus("Please fill in server URL and port first", "error");
       return;
     }
 
     this.clearDebugLog();
     this.logDebug("🔧 HTTPS-Only Mode Auto-Fix Tool");
     this.logDebug("");
-    
+
     // Auto-detect if this is likely an HTTPS-Only issue
     if (!config.useHttps) {
-      this.logDebug("✅ Detected HTTP connection to local server - this is the typical HTTPS-Only Mode issue");
+      this.logDebug(
+        "✅ Detected HTTP connection to local server - this is the typical HTTPS-Only Mode issue"
+      );
       this.logDebug("");
-      
+
       // Show the solution immediately
       this.detectAndShowHttpsOnlySolution(config);
       this.logDebug("📋 Solution displayed above ↑");
     } else {
-      this.logDebug("ℹ️  You have HTTPS enabled, so this may not be an HTTPS-Only Mode issue");
+      this.logDebug(
+        "ℹ️  You have HTTPS enabled, so this may not be an HTTPS-Only Mode issue"
+      );
       this.logDebug("Try the regular 'Test Connection' button first");
     }
   }
