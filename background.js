@@ -90,13 +90,21 @@ class QBittorrentBackground {
           break;
 
         case "testConnection":
-          const result = await this.testConnection(message.data);
+          // Handle both old format (message.data) and new format (message.settings)
+          const connectionConfig = message.settings || message.data;
+          const result = await this.testConnection(connectionConfig);
           sendResponse({ success: true, data: result });
           break;
 
-        case "qbittorrentApi":
-          const apiResult = await this.makeQBittorrentRequest(message.data);
+        case "makeRequest":
+          // Handle QBittorrent API requests with settings
+          const apiResult = await this.makeQBittorrentRequest(message.settings, message.endpoint, message.method, message.data);
           sendResponse({ success: true, data: apiResult });
+          break;
+
+        case "qbittorrentApi":
+          const legacyApiResult = await this.makeQBittorrentRequest(message.data);
+          sendResponse({ success: true, data: legacyApiResult });
           break;
 
         default:
@@ -117,8 +125,17 @@ class QBittorrentBackground {
     await browser.storage.local.set({ config });
   }
 
-  async testConnection(config) {
+  async testConnection(settings) {
     try {
+      // Handle both old format (config) and new format (settings)
+      const config = settings.hostname ? {
+        serverUrl: settings.hostname,
+        port: settings.port,
+        useHttps: settings.useHttps,
+        username: settings.username,
+        password: settings.password
+      } : settings;
+
       const protocol = config.useHttps ? "https" : "http";
       const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
 
@@ -138,62 +155,76 @@ class QBittorrentBackground {
       console.log("Version API Response status:", versionResponse.status);
 
       if (!versionResponse.ok) {
-        return {
-          connected: false,
-          error: `QBittorrent API returned HTTP ${versionResponse.status}: ${versionResponse.statusText}`,
-        };
+        throw new Error(`QBittorrent API returned HTTP ${versionResponse.status}: ${versionResponse.statusText}`);
       }
 
       const version = await versionResponse.text();
       console.log("QBittorrent API version:", version);
 
-      // Test torrents endpoint to verify data access (should work without auth for local)
-      const torrentsUrl = `${baseUrl}/api/v2/torrents/info`;
-      const torrentsResponse = await fetch(torrentsUrl, {
-        method: "GET",
+      // Return success with server info
+      return {
+        server_version: version,
+        api_version: "2.0", // QBittorrent API v2
+        connected: true
+      };
+
+    } catch (error) {
+      console.error("Connection test failed:", error);
+      // Return error for sendResponse to handle
+      throw new Error(error.message);
+    }
+  }
+
+  // New simplified API request handler
+  async makeQBittorrentRequest(settings, endpoint, method = 'GET', data = null) {
+    try {
+      const config = settings.hostname ? {
+        serverUrl: settings.hostname,
+        port: settings.port,
+        useHttps: settings.useHttps,
+        username: settings.username,
+        password: settings.password
+      } : settings;
+
+      const protocol = config.useHttps ? "https" : "http";
+      const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
+      const url = `${baseUrl}${endpoint}`;
+
+      const requestOptions = {
+        method: method,
         mode: "cors",
         credentials: "omit",
         headers: {
-          Accept: "application/json",
+          "Accept": "application/json",
         },
-      });
+      };
 
-      console.log("Torrents API Response status:", torrentsResponse.status);
-
-      if (torrentsResponse.ok) {
-        const torrents = await torrentsResponse.json();
-        console.log("Found torrents:", torrents.length);
-
-        return {
-          connected: true,
-          version: version.trim(),
-          authenticated: true, // Local access without auth
-          torrentCount: torrents.length,
-        };
-      } else {
-        // Version works but torrents doesn't - might need auth
-        return {
-          connected: true,
-          version: version.trim(),
-          authenticated: false,
-          authError: `Torrents access failed: HTTP ${torrentsResponse.status}`,
-        };
+      // Add data for POST requests
+      if (method === 'POST' && data) {
+        const formData = new FormData();
+        Object.keys(data).forEach(key => {
+          formData.append(key, data[key]);
+        });
+        requestOptions.body = formData;
       }
+
+      const response = await fetch(url, requestOptions);
+
+      if (!response.ok) {
+        throw new Error(`API request failed: HTTP ${response.status}`);
+      }
+
+      // Handle different response types
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        return await response.text();
+      }
+
     } catch (error) {
-      console.error("QBittorrent API connection test error:", error);
-
-      if (error.name === "TypeError" && error.message.includes("fetch")) {
-        return {
-          connected: false,
-          error:
-            "Cannot reach QBittorrent server - Check if QBittorrent is running and Web UI is enabled",
-        };
-      } else {
-        return {
-          connected: false,
-          error: `API connection failed: ${error.message}`,
-        };
-      }
+      console.error("QBittorrent API request failed:", error);
+      throw error;
     }
   }
 

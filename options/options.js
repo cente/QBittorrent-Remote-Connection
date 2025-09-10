@@ -18,15 +18,14 @@ class QBittorrentOptionsManager {
   }
 
   setupEventListeners() {
-    // Form elements
-    const hostnameInput = document.getElementById('hostname');
+    // Form elements (matching the HTML IDs)
+    const hostnameInput = document.getElementById('serverUrl');
     const portInput = document.getElementById('port');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const httpsCheckbox = document.getElementById('useHttps');
-    const saveBtn = document.getElementById('saveBtn');
-    const testBtn = document.getElementById('testBtn');
-    const openWebUIBtn = document.getElementById('openWebUIBtn');
+    const saveBtn = document.getElementById('saveConfig');
+    const testBtn = document.getElementById('testConnection');
 
     // Event listeners
     hostnameInput?.addEventListener('input', () => this.handleInputChange('hostname', hostnameInput.value));
@@ -35,9 +34,11 @@ class QBittorrentOptionsManager {
     passwordInput?.addEventListener('input', () => this.handleInputChange('password', passwordInput.value));
     httpsCheckbox?.addEventListener('change', () => this.handleInputChange('useHttps', httpsCheckbox.checked));
     
-    saveBtn?.addEventListener('click', () => this.saveSettings());
+    saveBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.saveSettings();
+    });
     testBtn?.addEventListener('click', () => this.testConnection());
-    openWebUIBtn?.addEventListener('click', () => this.openWebUI());
 
     // Auto-test connection when URL changes
     hostnameInput?.addEventListener('blur', () => this.updateConnectionStatus());
@@ -51,20 +52,23 @@ class QBittorrentOptionsManager {
   }
 
   updateSaveButtonState() {
-    const saveBtn = document.getElementById('saveBtn');
+    const saveBtn = document.getElementById('saveConfig');
     const hasChanges = this.hasUnsavedChanges();
     
     if (saveBtn) {
       saveBtn.disabled = !hasChanges;
-      saveBtn.innerHTML = hasChanges 
-        ? '<i class="bi bi-floppy me-2"></i>Save Changes'
-        : '<i class="bi bi-check-circle me-2"></i>Saved';
+      const btnText = saveBtn.querySelector('.btn-text');
+      if (btnText) {
+        btnText.innerHTML = hasChanges 
+          ? '<i class="bi bi-floppy me-2"></i>Save Changes'
+          : '<i class="bi bi-check-circle me-2"></i>Saved';
+      }
     }
   }
 
   hasUnsavedChanges() {
     // Check if current form values differ from stored settings
-    const hostnameInput = document.getElementById('hostname');
+    const hostnameInput = document.getElementById('serverUrl');
     const portInput = document.getElementById('port');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -93,7 +97,7 @@ class QBittorrentOptionsManager {
   }
 
   populateForm() {
-    const hostnameInput = document.getElementById('hostname');
+    const hostnameInput = document.getElementById('serverUrl');
     const portInput = document.getElementById('port');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -109,14 +113,16 @@ class QBittorrentOptionsManager {
   }
 
   async saveSettings() {
-    const saveBtn = document.getElementById('saveBtn');
-    const originalText = saveBtn?.innerHTML;
+    const saveBtn = document.getElementById('saveConfig');
+    const btnText = saveBtn?.querySelector('.btn-text');
+    const spinner = saveBtn?.querySelector('.spinner-border');
     
     try {
       // Show saving state
       if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i>Saving...';
+        if (btnText) btnText.style.display = 'none';
+        if (spinner) spinner.style.display = 'inline-block';
       }
 
       await browser.storage.local.set({
@@ -124,9 +130,11 @@ class QBittorrentOptionsManager {
       });
 
       // Show success state
-      if (saveBtn) {
-        saveBtn.innerHTML = '<i class="bi bi-check-circle-fill text-success me-2"></i>Saved Successfully!';
+      if (btnText) {
+        btnText.innerHTML = '<i class="bi bi-check-circle-fill text-success me-2"></i>Saved Successfully!';
+        btnText.style.display = 'inline';
       }
+      if (spinner) spinner.style.display = 'none';
 
       this.showMessage('Settings saved successfully!', 'success');
       this.updateConnectionStatus();
@@ -143,19 +151,22 @@ class QBittorrentOptionsManager {
       // Reset button on error
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
+        if (btnText) btnText.style.display = 'inline';
+        if (spinner) spinner.style.display = 'none';
       }
     }
   }
 
   async testConnection() {
-    const testBtn = document.getElementById('testBtn');
-    const originalText = testBtn?.innerHTML;
+    const testBtn = document.getElementById('testConnection');
+    const btnText = testBtn?.querySelector('.btn-text');
+    const spinner = testBtn?.querySelector('.spinner-border');
     
     try {
       if (testBtn) {
         testBtn.disabled = true;
-        testBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i>Testing...';
+        if (btnText) btnText.style.display = 'none';
+        if (spinner) spinner.style.display = 'inline-block';
       }
 
       const response = await browser.runtime.sendMessage({
@@ -178,7 +189,8 @@ class QBittorrentOptionsManager {
     } finally {
       if (testBtn) {
         testBtn.disabled = false;
-        testBtn.innerHTML = originalText;
+        if (btnText) btnText.style.display = 'inline';
+        if (spinner) spinner.style.display = 'none';
       }
     }
   }
@@ -207,123 +219,83 @@ class QBittorrentOptionsManager {
 
   updateConnectionStatusCard(status, data = null, error = null) {
     const statusCard = document.getElementById('connectionStatusCard');
-    const statusIcon = document.getElementById('connectionStatusIcon');
-    const statusText = document.getElementById('connectionStatusText');
-    const statusDetails = document.getElementById('connectionStatusDetails');
-    const openWebUIBtn = document.getElementById('openWebUIBtn');
+    const statusTitle = document.getElementById('connectionStatusTitle');
+    const statusServerUrl = document.getElementById('statusServerUrl');
+    const statusServerVersion = document.getElementById('statusServerVersion');
+    const statusTorrentCount = document.getElementById('statusTorrentCount');
+    const statusLastCheck = document.getElementById('statusLastCheck');
 
-    if (!statusCard || !statusIcon || !statusText) return;
+    if (!statusCard) return;
 
     // Reset classes
-    statusCard.className = 'card mb-4';
+    statusCard.className = 'card bg-dark mb-4';
     
     switch (status) {
       case 'connected':
         statusCard.classList.add('border-success');
-        statusIcon.className = 'bi bi-check-circle-fill text-success';
-        statusText.textContent = 'Connected Successfully';
-        statusText.className = 'fw-bold text-success mb-2';
+        statusCard.querySelector('.card-header').className = 'card-header bg-success';
+        if (statusTitle) statusTitle.innerHTML = '<i class="bi bi-check-circle me-2"></i>Connected to QBittorrent';
         
-        if (data && statusDetails) {
-          statusDetails.innerHTML = `
-            <div class="row g-2">
-              <div class="col-6">
-                <small class="text-muted d-block">Server Version</small>
-                <span class="badge bg-success">${data.server_version || 'Unknown'}</span>
-              </div>
-              <div class="col-6">
-                <small class="text-muted d-block">API Version</small>
-                <span class="badge bg-info">${data.api_version || 'Unknown'}</span>
-              </div>
-            </div>
-          `;
-          statusDetails.style.display = 'block';
+        if (data) {
+          if (statusServerUrl) statusServerUrl.textContent = `${this.settings.hostname}:${this.settings.port}`;
+          if (statusServerVersion) statusServerVersion.textContent = data.server_version || 'Unknown';
         }
         
-        if (openWebUIBtn) {
-          openWebUIBtn.style.display = 'inline-block';
-        }
+        if (statusLastCheck) statusLastCheck.textContent = new Date().toLocaleTimeString();
+        statusCard.style.display = 'block';
         break;
 
       case 'error':
         statusCard.classList.add('border-danger');
-        statusIcon.className = 'bi bi-x-circle-fill text-danger';
-        statusText.textContent = 'Connection Failed';
-        statusText.className = 'fw-bold text-danger mb-2';
+        statusCard.querySelector('.card-header').className = 'card-header bg-danger';
+        if (statusTitle) statusTitle.innerHTML = '<i class="bi bi-x-circle me-2"></i>Connection Failed';
         
-        if (error && statusDetails) {
-          statusDetails.innerHTML = `
-            <div class="alert alert-danger py-2 mb-0">
-              <small><i class="bi bi-exclamation-triangle me-1"></i>${error}</small>
-            </div>
-          `;
-          statusDetails.style.display = 'block';
-        }
-        
-        if (openWebUIBtn) {
-          openWebUIBtn.style.display = 'none';
-        }
+        if (statusServerUrl) statusServerUrl.textContent = error || 'Check settings';
+        if (statusServerVersion) statusServerVersion.textContent = '-';
+        if (statusTorrentCount) statusTorrentCount.textContent = '-';
+        if (statusLastCheck) statusLastCheck.textContent = new Date().toLocaleTimeString();
+        statusCard.style.display = 'block';
         break;
 
       case 'disconnected':
       default:
-        statusCard.classList.add('border-secondary');
-        statusIcon.className = 'bi bi-circle text-secondary';
-        statusText.textContent = 'Not Connected';
-        statusText.className = 'fw-bold text-secondary mb-2';
-        
-        if (statusDetails) {
-          statusDetails.innerHTML = '<small class="text-muted">Enter server details above to connect</small>';
-          statusDetails.style.display = 'block';
-        }
-        
-        if (openWebUIBtn) {
-          openWebUIBtn.style.display = 'none';
-        }
+        statusCard.style.display = 'none';
         break;
     }
   }
 
-  openWebUI() {
-    const protocol = this.settings.useHttps ? 'https' : 'http';
-    const url = `${protocol}://${this.settings.hostname}:${this.settings.port}`;
-    browser.tabs.create({ url });
-  }
-
   showMessage(message, type = 'info') {
-    // Create or update a toast message
-    const toastContainer = document.getElementById('toastContainer') || this.createToastContainer();
+    const statusMessage = document.getElementById('statusMessage');
+    const statusText = statusMessage?.querySelector('.status-text');
     
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-bg-${type} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.innerHTML = `
-      <div class="d-flex">
-        <div class="toast-body">
-          ${message}
-        </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-      </div>
-    `;
-    
-    toastContainer.appendChild(toast);
-    
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    // Remove toast element after it's hidden
-    toast.addEventListener('hidden.bs.toast', () => {
-      toast.remove();
-    });
-  }
-
-  createToastContainer() {
-    const container = document.createElement('div');
-    container.id = 'toastContainer';
-    container.className = 'toast-container position-fixed top-0 end-0 p-3';
-    container.style.zIndex = '1050';
-    document.body.appendChild(container);
-    return container;
+    if (statusMessage && statusText) {
+      // Reset classes
+      statusMessage.className = 'alert border-0';
+      
+      // Apply type-specific styling
+      switch (type) {
+        case 'success':
+          statusMessage.classList.add('alert-success');
+          break;
+        case 'danger':
+        case 'error':
+          statusMessage.classList.add('alert-danger');
+          break;
+        case 'warning':
+          statusMessage.classList.add('alert-warning');
+          break;
+        default:
+          statusMessage.classList.add('alert-info');
+      }
+      
+      statusText.textContent = message;
+      statusMessage.style.display = 'block';
+      
+      // Hide after 5 seconds
+      setTimeout(() => {
+        statusMessage.style.display = 'none';
+      }, 5000);
+    }
   }
 }
 
