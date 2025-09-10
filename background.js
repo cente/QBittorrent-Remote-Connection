@@ -98,12 +98,19 @@ class QBittorrentBackground {
 
         case "makeRequest":
           // Handle QBittorrent API requests with settings
-          const apiResult = await this.makeQBittorrentRequest(message.settings, message.endpoint, message.method, message.data);
+          const apiResult = await this.makeQBittorrentRequest(
+            message.settings,
+            message.endpoint,
+            message.method,
+            message.data
+          );
           sendResponse({ success: true, data: apiResult });
           break;
 
         case "qbittorrentApi":
-          const legacyApiResult = await this.makeQBittorrentRequest(message.data);
+          const legacyApiResult = await this.makeQBittorrentRequest(
+            message.data
+          );
           sendResponse({ success: true, data: legacyApiResult });
           break;
 
@@ -128,13 +135,15 @@ class QBittorrentBackground {
   async testConnection(settings) {
     try {
       // Handle both old format (config) and new format (settings)
-      const config = settings.hostname ? {
-        serverUrl: settings.hostname,
-        port: settings.port,
-        useHttps: settings.useHttps,
-        username: settings.username,
-        password: settings.password
-      } : settings;
+      const config = settings.hostname
+        ? {
+            serverUrl: settings.hostname,
+            port: settings.port,
+            useHttps: settings.useHttps,
+            username: settings.username,
+            password: settings.password,
+          }
+        : settings;
 
       const protocol = config.useHttps ? "https" : "http";
       const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
@@ -155,7 +164,9 @@ class QBittorrentBackground {
       console.log("Version API Response status:", versionResponse.status);
 
       if (!versionResponse.ok) {
-        throw new Error(`QBittorrent API returned HTTP ${versionResponse.status}: ${versionResponse.statusText}`);
+        throw new Error(
+          `QBittorrent API returned HTTP ${versionResponse.status}: ${versionResponse.statusText}`
+        );
       }
 
       const version = await versionResponse.text();
@@ -165,9 +176,8 @@ class QBittorrentBackground {
       return {
         server_version: version,
         api_version: "2.0", // QBittorrent API v2
-        connected: true
+        connected: true,
       };
-
     } catch (error) {
       console.error("Connection test failed:", error);
       // Return error for sendResponse to handle
@@ -176,15 +186,22 @@ class QBittorrentBackground {
   }
 
   // New simplified API request handler
-  async makeQBittorrentRequest(settings, endpoint, method = 'GET', data = null) {
+  async makeQBittorrentRequest(
+    settings,
+    endpoint,
+    method = "GET",
+    data = null
+  ) {
     try {
-      const config = settings.hostname ? {
-        serverUrl: settings.hostname,
-        port: settings.port,
-        useHttps: settings.useHttps,
-        username: settings.username,
-        password: settings.password
-      } : settings;
+      const config = settings.hostname
+        ? {
+            serverUrl: settings.hostname,
+            port: settings.port,
+            useHttps: settings.useHttps,
+            username: settings.username,
+            password: settings.password,
+          }
+        : settings;
 
       const protocol = config.useHttps ? "https" : "http";
       const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
@@ -195,14 +212,14 @@ class QBittorrentBackground {
         mode: "cors",
         credentials: "omit",
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
         },
       };
 
       // Add data for POST requests
-      if (method === 'POST' && data) {
+      if (method === "POST" && data) {
         const formData = new FormData();
-        Object.keys(data).forEach(key => {
+        Object.keys(data).forEach((key) => {
           formData.append(key, data[key]);
         });
         requestOptions.body = formData;
@@ -215,13 +232,12 @@ class QBittorrentBackground {
       }
 
       // Handle different response types
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
         return await response.json();
       } else {
         return await response.text();
       }
-
     } catch (error) {
       console.error("QBittorrent API request failed:", error);
       throw error;
