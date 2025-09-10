@@ -45,6 +45,9 @@ class OptionsManager {
     document
       .getElementById("fixHttpsOnlyMode")
       ?.addEventListener("click", () => this.fixHttpsOnlyMode());
+    document
+      .getElementById("quickFixHttpsOnlyMode")
+      ?.addEventListener("click", () => this.fixHttpsOnlyMode());
 
     // Auto-save on input change
     this.form.addEventListener("input", () => {
@@ -363,7 +366,10 @@ class OptionsManager {
         "⚠️  Note: Testing HTTP connection - Firefox HTTPS-Only mode may interfere"
       );
       this.logDebug(
-        "💡 If this fails, try disabling HTTPS-Only mode for this extension"
+        "💡 Make sure you have a PERMANENT exception (not temporary) for this URL"
+      );
+      this.logDebug(
+        `📍 Exception should be: ${baseUrl}`
       );
     }
 
@@ -644,12 +650,12 @@ class OptionsManager {
         
         <div class="row g-2 mb-3">
           <div class="col-md-6">
-            <button type="button" class="btn btn-success w-100" onclick="window.openFirefoxSettings()">
+            <button type="button" class="btn btn-success w-100" id="openFirefoxSettingsBtn">
               <i class="bi bi-gear me-1"></i>Open Firefox Settings
             </button>
           </div>
           <div class="col-md-6">
-            <button type="button" class="btn btn-info w-100" onclick="window.copyExceptionUrl()">
+            <button type="button" class="btn btn-info w-100" id="copyExceptionUrlBtn">
               <i class="bi bi-clipboard me-1"></i>Copy Exception URL
             </button>
           </div>
@@ -657,7 +663,7 @@ class OptionsManager {
         
         <div class="row g-2 mb-3">
           <div class="col-12">
-            <button type="button" class="btn btn-outline-secondary w-100 btn-sm" onclick="window.showManualSettingsInstructions()">
+            <button type="button" class="btn btn-outline-secondary w-100 btn-sm" id="showManualInstructionsBtn">
               <i class="bi bi-list-ol me-1"></i>Show Step-by-Step Instructions
             </button>
           </div>
@@ -677,7 +683,7 @@ class OptionsManager {
           </div>
         </div>
         
-        <button type="button" class="btn-close float-end" onclick="document.getElementById('httpsOnlyAlert').remove()"></button>
+        <button type="button" class="btn-close float-end" id="closeHttpsOnlyAlert"></button>
       </div>
     `;
 
@@ -690,77 +696,106 @@ class OptionsManager {
       statusMessage.insertAdjacentHTML("afterend", modalHtml);
     }
 
-    // Add global functions for the buttons
-    const self = this; // Capture 'this' context for global functions
+    // Add event listeners for modal buttons instead of global functions
+    const self = this;
     
-    window.openFirefoxSettings = () => {
-      self.logDebug("🔧 Attempting to help you open Firefox settings...");
+    // Set up event listeners after modal is inserted
+    setTimeout(() => {
+      const openSettingsBtn = document.getElementById('openFirefoxSettingsBtn');
+      const copyUrlBtn = document.getElementById('copyExceptionUrlBtn');
+      const showInstructionsBtn = document.getElementById('showManualInstructionsBtn');
+      const closeAlertBtn = document.getElementById('closeHttpsOnlyAlert');
       
-      // Method 1: Try to use browser.tabs API if available
-      if (typeof browser !== 'undefined' && browser.tabs) {
-        browser.tabs.create({
-          url: 'about:preferences#privacy'
-        }).then(() => {
-          self.logDebug("✅ Opened Firefox Privacy & Security settings in new tab");
-        }).catch(error => {
-          self.logDebug("⚠️ Browser API method failed, trying alternative methods...");
-          window.tryAlternativeSettingsMethod();
+      if (openSettingsBtn) {
+        openSettingsBtn.addEventListener('click', () => {
+          self.openFirefoxSettings();
         });
-      } else {
-        window.tryAlternativeSettingsMethod();
       }
-    };
-    
-    // Alternative method for opening settings
-    window.tryAlternativeSettingsMethod = () => {
-      self.logDebug("🔧 Using alternative method...");
       
-      // Method 2: Try direct window.open with error handling
-      try {
-        const settingsWindow = window.open("about:preferences#privacy", "_blank");
-        if (!settingsWindow) {
-          throw new Error("Popup blocked or not supported");
-        }
-        self.logDebug("✅ Opened settings window (if popup wasn't blocked)");
-      } catch (error) {
-        self.logDebug("⚠️ Cannot auto-open settings page due to browser security restrictions");
-        window.showManualSettingsInstructions();
+      if (copyUrlBtn) {
+        copyUrlBtn.addEventListener('click', () => {
+          self.copyExceptionUrl(serverUrl);
+        });
       }
-    };
-    
-    // Show step-by-step manual instructions
-    window.showManualSettingsInstructions = () => {
-      self.logDebug("");
-      self.logDebug("📋 Manual Firefox Settings Instructions:");
-      self.logDebug("1️⃣ Type 'about:preferences#privacy' in Firefox address bar");
-      self.logDebug("2️⃣ OR: Firefox Menu (☰) → Settings → Privacy & Security");
-      self.logDebug("3️⃣ Scroll down to 'HTTPS-Only Mode' section");
-      self.logDebug("4️⃣ Click 'Manage Exceptions...'");
-      self.logDebug("5️⃣ Add your server URL to exceptions");
-      self.logDebug("");
       
-      // Also try to copy the settings URL to clipboard
-      const settingsUrl = "about:preferences#privacy";
-      navigator.clipboard.writeText(settingsUrl).then(() => {
-        self.logDebug("✅ Copied settings URL to clipboard: " + settingsUrl);
-        self.logDebug("📋 Paste this in Firefox address bar");
-      }).catch(() => {
-        self.logDebug("📋 Copy this URL manually: " + settingsUrl);
-      });
-    };
+      if (showInstructionsBtn) {
+        showInstructionsBtn.addEventListener('click', () => {
+          self.showManualSettingsInstructions();
+        });
+      }
+      
+      if (closeAlertBtn) {
+        closeAlertBtn.addEventListener('click', () => {
+          document.getElementById('httpsOnlyAlert')?.remove();
+        });
+      }
+    }, 100);
+  }
 
-    window.copyExceptionUrl = () => {
-      const url = serverUrl;
-      navigator.clipboard
-        .writeText(url)
-        .then(() => {
-          self.logDebug(`✅ Copied to clipboard: ${url}`);
-          self.logDebug("📋 Paste this URL in HTTPS-Only Mode exceptions");
-        })
-        .catch(() => {
-          self.logDebug(`📋 Copy this URL manually: ${url}`);
-        });
-    };
+  openFirefoxSettings() {
+    this.logDebug("🔧 Attempting to help you open Firefox settings...");
+    
+    // Method 1: Try to use browser.tabs API if available
+    if (typeof browser !== 'undefined' && browser.tabs) {
+      browser.tabs.create({
+        url: 'about:preferences#privacy'
+      }).then(() => {
+        this.logDebug("✅ Opened Firefox Privacy & Security settings in new tab");
+      }).catch(error => {
+        this.logDebug("⚠️ Browser API method failed, trying alternative methods...");
+        this.tryAlternativeSettingsMethod();
+      });
+    } else {
+      this.tryAlternativeSettingsMethod();
+    }
+  }
+  
+  tryAlternativeSettingsMethod() {
+    this.logDebug("🔧 Using alternative method...");
+    
+    // Method 2: Try direct window.open with error handling
+    try {
+      const settingsWindow = window.open("about:preferences#privacy", "_blank");
+      if (!settingsWindow) {
+        throw new Error("Popup blocked or not supported");
+      }
+      this.logDebug("✅ Opened settings window (if popup wasn't blocked)");
+    } catch (error) {
+      this.logDebug("⚠️ Cannot auto-open settings page due to browser security restrictions");
+      this.showManualSettingsInstructions();
+    }
+  }
+  
+  showManualSettingsInstructions() {
+    this.logDebug("");
+    this.logDebug("📋 Manual Firefox Settings Instructions:");
+    this.logDebug("1️⃣ Type 'about:preferences#privacy' in Firefox address bar");
+    this.logDebug("2️⃣ OR: Firefox Menu (☰) → Settings → Privacy & Security");
+    this.logDebug("3️⃣ Scroll down to 'HTTPS-Only Mode' section");
+    this.logDebug("4️⃣ Click 'Manage Exceptions...'");
+    this.logDebug("5️⃣ Add your server URL to exceptions");
+    this.logDebug("");
+    
+    // Also try to copy the settings URL to clipboard
+    const settingsUrl = "about:preferences#privacy";
+    navigator.clipboard.writeText(settingsUrl).then(() => {
+      this.logDebug("✅ Copied settings URL to clipboard: " + settingsUrl);
+      this.logDebug("📋 Paste this in Firefox address bar");
+    }).catch(() => {
+      this.logDebug("📋 Copy this URL manually: " + settingsUrl);
+    });
+  }
+
+  copyExceptionUrl(serverUrl) {
+    navigator.clipboard
+      .writeText(serverUrl)
+      .then(() => {
+        this.logDebug(`✅ Copied to clipboard: ${serverUrl}`);
+        this.logDebug("📋 Paste this URL in HTTPS-Only Mode exceptions");
+      })
+      .catch(() => {
+        this.logDebug(`📋 Copy this URL manually: ${serverUrl}`);
+      });
   }
 
   fixHttpsOnlyMode() {

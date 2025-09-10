@@ -14,7 +14,7 @@
     "webRequestBlocking"
   ],
 
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+  "content_security_policy": "script-src 'self' 'unsafe-eval' 'unsafe-hashes'; object-src 'self'",
   
   "background": {
     "scripts": ["background.js"],
