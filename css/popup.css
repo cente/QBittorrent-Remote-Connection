@@ -1,13 +1,39 @@
 /* Popup dark mode specific overrides */
-body {
-  width: 320px !important;
-  min-height: 400px;
-  overflow-x: hidden;
+html, body {
+  width: 300px !important;
+  min-height: 380px;
+  max-width: 300px !important;
+  overflow-x: hidden !important;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 .popup-container {
   width: 100% !important;
-  min-height: 400px;
+  max-width: 300px !important;
+  min-height: 380px;
+  overflow-x: hidden !important;
+  overflow-y: auto;
+}
+
+/* Ensure all content stays within bounds */
+.container-fluid, .row, .col, .col-6 {
+  max-width: 100% !important;
+  overflow-x: hidden;
+}
+
+/* Constrain text and prevent overflow */
+.font-monospace {
+  word-break: break-all;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Dark mode card styling */
@@ -17,6 +43,12 @@ body {
 
 .card.bg-dark .card-body {
   background-color: #1a1a1a !important;
+}
+
+/* Ensure buttons fit properly */
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
 }
 
 /* Connection status animations */
@@ -46,12 +78,12 @@ body {
 
 /* Ensure proper spacing */
 .alert {
-  margin-bottom: 0.75rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
 /* Dark scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -60,9 +92,28 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #555;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #777;
+}
+
+/* Prevent text overflow in small containers */
+.text-truncate-custom {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Responsive grid adjustments */
+.row.g-1 > * {
+  padding-right: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+.row.g-1 {
+  margin-right: -0.25rem;
+  margin-left: -0.25rem;
 }

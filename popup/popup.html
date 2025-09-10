@@ -9,137 +9,137 @@
   <link rel="stylesheet" href="../css/popup.css">
 </head>
 <body class="bg-dark text-light">
-  <div class="popup-container" style="width: 320px; min-height: 400px;">
-    <header class="bg-primary text-white p-3 d-flex justify-content-between align-items-center">
-      <h1 class="h6 mb-0 fw-bold">
-        <i class="bi bi-cloud-arrow-down me-2"></i>QBittorrent Remote
+  <div class="popup-container" style="width: 300px; min-height: 380px;">
+    <header class="bg-primary text-white p-2 d-flex justify-content-between align-items-center">
+      <h1 class="h6 mb-0 fw-bold small">
+        <i class="bi bi-cloud-arrow-down me-1"></i>QBittorrent Remote
       </h1>
-      <button id="settingsBtn" class="btn btn-sm btn-outline-light border-0" title="Settings">
-        <i class="bi bi-gear"></i>
+      <button id="settingsBtn" class="btn btn-sm btn-outline-light border-0 p-1" title="Settings">
+        <i class="bi bi-gear" style="font-size: 14px;"></i>
       </button>
     </header>
 
-    <div id="configPrompt" class="text-center p-4" style="display: none;">
+    <div id="configPrompt" class="text-center p-3" style="display: none;">
       <div class="prompt-content">
-        <i class="bi bi-exclamation-triangle-fill text-warning fs-1 mb-3"></i>
-        <h3 class="h5 text-warning mb-3">Setup Required</h3>
-        <p class="text-muted mb-3">Configure your QBittorrent server connection to get started.</p>
-        <button id="openSettingsBtn" class="btn btn-primary">
+        <i class="bi bi-exclamation-triangle-fill text-warning mb-2" style="font-size: 2rem;"></i>
+        <h3 class="h6 text-warning mb-2">Setup Required</h3>
+        <p class="text-muted mb-3 small">Configure your QBittorrent server connection to get started.</p>
+        <button id="openSettingsBtn" class="btn btn-primary btn-sm">
           <i class="bi bi-gear me-1"></i>Open Settings
         </button>
       </div>
     </div>
 
-    <div id="mainContent" class="p-3">
-      <div id="connectionStatus" class="alert d-flex align-items-center mb-3 border-0" role="alert">
+    <div id="mainContent" class="p-2">
+      <div id="connectionStatus" class="alert d-flex align-items-center mb-2 py-2 px-2 border-0" role="alert">
         <div class="status-indicator me-2">
           <i class="bi bi-circle-fill" style="font-size: 8px;"></i>
         </div>
         <span class="status-text small">Checking connection...</span>
       </div>
 
-      <div id="serverInfo" class="card bg-dark border-secondary mb-3" style="display: none;">
-        <div class="card-body py-2 px-3">
+      <div id="serverInfo" class="card bg-dark border-secondary mb-2" style="display: none;">
+        <div class="card-body py-2 px-2">
           <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="text-muted small">
+            <span class="text-muted" style="font-size: 11px;">
               <i class="bi bi-server me-1"></i>Server:
             </span>
-            <span id="serverUrl" class="font-monospace small text-info">-</span>
+            <span id="serverUrl" class="font-monospace text-info" style="font-size: 10px;">-</span>
           </div>
           <div class="d-flex justify-content-between align-items-center">
-            <span class="text-muted small">
+            <span class="text-muted" style="font-size: 11px;">
               <i class="bi bi-info-circle me-1"></i>Version:
             </span>
-            <span id="serverVersion" class="font-monospace small text-success">-</span>
+            <span id="serverVersion" class="font-monospace text-success" style="font-size: 10px;">-</span>
           </div>
         </div>
       </div>
 
-      <div id="quickActions" class="mb-3" style="display: none;">
-        <h3 class="h6 mb-2 text-light">
+      <div id="quickActions" class="mb-2" style="display: none;">
+        <h3 class="h6 mb-2 text-light" style="font-size: 12px;">
           <i class="bi bi-lightning-fill me-1"></i>Quick Actions
         </h3>
-        <div class="d-grid gap-2">
-          <button id="openWebUIBtn" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-box-arrow-up-right me-1"></i>Open Web UI
+        <div class="d-grid gap-1">
+          <button id="openWebUIBtn" class="btn btn-outline-primary btn-sm py-1">
+            <i class="bi bi-box-arrow-up-right me-1"></i><span style="font-size: 11px;">Open Web UI</span>
           </button>
-          <div class="row g-2">
+          <div class="row g-1">
             <div class="col-6">
-              <button id="refreshBtn" class="btn btn-outline-secondary btn-sm w-100">
-                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+              <button id="refreshBtn" class="btn btn-outline-secondary btn-sm w-100 py-1">
+                <i class="bi bi-arrow-clockwise"></i><span class="d-none d-sm-inline ms-1" style="font-size: 10px;">Refresh</span>
               </button>
             </div>
             <div class="col-6">
-              <button id="pauseAllBtn" class="btn btn-outline-warning btn-sm w-100">
-                <i class="bi bi-pause-fill me-1"></i>Pause All
+              <button id="pauseAllBtn" class="btn btn-outline-warning btn-sm w-100 py-1">
+                <i class="bi bi-pause-fill"></i><span class="d-none d-sm-inline ms-1" style="font-size: 10px;">Pause</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div id="torrentStats" class="mb-3" style="display: none;">
-        <h3 class="h6 mb-2 text-light">
+      <div id="torrentStats" class="mb-2" style="display: none;">
+        <h3 class="h6 mb-2 text-light" style="font-size: 12px;">
           <i class="bi bi-bar-chart-fill me-1"></i>Statistics
         </h3>
-        <div class="row g-2">
+        <div class="row g-1">
           <div class="col-6">
             <div class="card bg-dark border-primary text-center">
-              <div class="card-body py-2 px-1">
-                <div class="h6 mb-0 text-primary" id="downloadingCount">
+              <div class="card-body py-1 px-1">
+                <div class="small mb-0 text-primary" id="downloadingCount" style="font-size: 11px;">
                   <i class="bi bi-download"></i> -
                 </div>
-                <small class="text-muted">Downloading</small>
+                <div class="text-muted" style="font-size: 9px;">Downloading</div>
               </div>
             </div>
           </div>
           <div class="col-6">
             <div class="card bg-dark border-success text-center">
-              <div class="card-body py-2 px-1">
-                <div class="h6 mb-0 text-success" id="seedingCount">
+              <div class="card-body py-1 px-1">
+                <div class="small mb-0 text-success" id="seedingCount" style="font-size: 11px;">
                   <i class="bi bi-upload"></i> -
                 </div>
-                <small class="text-muted">Seeding</small>
+                <div class="text-muted" style="font-size: 9px;">Seeding</div>
               </div>
             </div>
           </div>
           <div class="col-6">
             <div class="card bg-dark border-warning text-center">
-              <div class="card-body py-2 px-1">
-                <div class="h6 mb-0 text-warning" id="pausedCount">
+              <div class="card-body py-1 px-1">
+                <div class="small mb-0 text-warning" id="pausedCount" style="font-size: 11px;">
                   <i class="bi bi-pause"></i> -
                 </div>
-                <small class="text-muted">Paused</small>
+                <div class="text-muted" style="font-size: 9px;">Paused</div>
               </div>
             </div>
           </div>
           <div class="col-6">
             <div class="card bg-dark border-info text-center">
-              <div class="card-body py-2 px-1">
-                <div class="h6 mb-0 text-info" id="totalCount">
+              <div class="card-body py-1 px-1">
+                <div class="small mb-0 text-info" id="totalCount" style="font-size: 11px;">
                   <i class="bi bi-list"></i> -
                 </div>
-                <small class="text-muted">Total</small>
+                <div class="text-muted" style="font-size: 9px;">Total</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div id="errorMessage" class="alert alert-danger d-flex justify-content-between align-items-center border-0" style="display: none;" role="alert">
+      <div id="errorMessage" class="alert alert-danger d-flex justify-content-between align-items-center border-0 py-2 px-2" style="display: none;" role="alert">
         <div class="d-flex align-items-center">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>
-          <span class="error-text small"></span>
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          <span class="error-text" style="font-size: 11px;"></span>
         </div>
-        <button id="retryBtn" class="btn btn-sm btn-outline-danger border-0">
-          <i class="bi bi-arrow-clockwise"></i>
+        <button id="retryBtn" class="btn btn-sm btn-outline-danger border-0 py-1 px-2">
+          <i class="bi bi-arrow-clockwise" style="font-size: 12px;"></i>
         </button>
       </div>
     </div>
 
-    <footer class="border-top border-secondary p-2 text-center bg-dark">
-      <div class="small text-muted">
-        <a href="#" id="aboutLink" class="text-decoration-none text-muted me-3">
+    <footer class="border-top border-secondary p-1 text-center bg-dark">
+      <div class="text-muted" style="font-size: 10px;">
+        <a href="#" id="aboutLink" class="text-decoration-none text-muted me-2">
           <i class="bi bi-info-circle me-1"></i>About
         </a>
         <a href="#" id="helpLink" class="text-decoration-none text-muted">
