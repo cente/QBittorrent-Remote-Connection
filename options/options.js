@@ -14,7 +14,8 @@ class QBittorrentOptionsManager {
   async init() {
     await this.loadSettings();
     this.setupEventListeners();
-    this.updateConnectionStatus();
+    // Remove automatic connection status update - only do it when user tests
+    // this.updateConnectionStatus();
   }
 
   setupEventListeners() {
@@ -219,13 +220,18 @@ class QBittorrentOptionsManager {
 
   updateConnectionStatusCard(status, data = null, error = null) {
     const statusCard = document.getElementById('connectionStatusCard');
+    
+    if (!statusCard) {
+      console.log('Connection status card not found');
+      return;
+    }
+
     const statusTitle = document.getElementById('connectionStatusTitle');
     const statusServerUrl = document.getElementById('statusServerUrl');
     const statusServerVersion = document.getElementById('statusServerVersion');
     const statusTorrentCount = document.getElementById('statusTorrentCount');
     const statusLastCheck = document.getElementById('statusLastCheck');
-
-    if (!statusCard) return;
+    const cardHeader = statusCard.querySelector('.card-header');
 
     // Reset classes
     statusCard.className = 'card bg-dark mb-4';
@@ -233,7 +239,7 @@ class QBittorrentOptionsManager {
     switch (status) {
       case 'connected':
         statusCard.classList.add('border-success');
-        statusCard.querySelector('.card-header').className = 'card-header bg-success';
+        if (cardHeader) cardHeader.className = 'card-header bg-success';
         if (statusTitle) statusTitle.innerHTML = '<i class="bi bi-check-circle me-2"></i>Connected to QBittorrent';
         
         if (data) {
@@ -247,7 +253,7 @@ class QBittorrentOptionsManager {
 
       case 'error':
         statusCard.classList.add('border-danger');
-        statusCard.querySelector('.card-header').className = 'card-header bg-danger';
+        if (cardHeader) cardHeader.className = 'card-header bg-danger';
         if (statusTitle) statusTitle.innerHTML = '<i class="bi bi-x-circle me-2"></i>Connection Failed';
         
         if (statusServerUrl) statusServerUrl.textContent = error || 'Check settings';

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple QBittorrent Settings</title>
+    <link href="../vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+    </style>
+</head>
+<body class="bg-dark text-light">
+    <div class="container-fluid">
+        <h1>QBittorrent Settings</h1>
+        
+        <div class="mb-3">
+            <label for="hostname" class="form-label">Hostname:</label>
+            <input type="text" id="hostname" class="form-control" placeholder="blackbox">
+        </div>
+        
+        <div class="mb-3">
+            <label for="port" class="form-label">Port:</label>
+            <input type="text" id="port" class="form-control" placeholder="20000">
+        </div>
+        
+        <div class="mb-3">
+            <label for="username" class="form-label">Username:</label>
+            <input type="text" id="username" class="form-control">
+        </div>
+        
+        <div class="mb-3">
+            <label for="password" class="form-label">Password:</label>
+            <input type="password" id="password" class="form-control">
+        </div>
+        
+        <div class="mb-3">
+            <div class="form-check">
+                <input type="checkbox" id="useHttps" class="form-check-input">
+                <label for="useHttps" class="form-check-label">Use HTTPS</label>
+            </div>
+        </div>
+        
+        <button id="saveBtn" class="btn btn-primary">Save</button>
+        <button id="testBtn" class="btn btn-warning">Test Connection</button>
+        
+        <div id="result" class="mt-3"></div>
+    </div>
+
+    <script>
+        console.log('Simple options script loading...');
+        
+        class SimpleOptions {
+            constructor() {
+                console.log('SimpleOptions constructor');
+                this.setupEventListeners();
+                this.loadSettings();
+            }
+            
+            setupEventListeners() {
+                console.log('Setting up event listeners');
+                
+                const saveBtn = document.getElementById('saveBtn');
+                const testBtn = document.getElementById('testBtn');
+                
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', () => this.saveSettings());
+                    console.log('Save button listener added');
+                } else {
+                    console.error('Save button not found');
+                }
+                
+                if (testBtn) {
+                    testBtn.addEventListener('click', () => this.testConnection());
+                    console.log('Test button listener added');
+                } else {
+                    console.error('Test button not found');
+                }
+            }
+            
+            async loadSettings() {
+                try {
+                    const result = await browser.storage.local.get(['qbittorrent_settings']);
+                    const settings = result.qbittorrent_settings || {};
+                    
+                    document.getElementById('hostname').value = settings.hostname || '';
+                    document.getElementById('port').value = settings.port || '';
+                    document.getElementById('username').value = settings.username || '';
+                    document.getElementById('password').value = settings.password || '';
+                    document.getElementById('useHttps').checked = settings.useHttps || false;
+                    
+                    console.log('Settings loaded:', settings);
+                } catch (error) {
+                    console.error('Error loading settings:', error);
+                }
+            }
+            
+            async saveSettings() {
+                try {
+                    const settings = {
+                        hostname: document.getElementById('hostname').value,
+                        port: document.getElementById('port').value,
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value,
+                        useHttps: document.getElementById('useHttps').checked
+                    };
+                    
+                    await browser.storage.local.set({ qbittorrent_settings: settings });
+                    this.showResult('Settings saved!', 'success');
+                    console.log('Settings saved:', settings);
+                } catch (error) {
+                    console.error('Error saving settings:', error);
+                    this.showResult('Error saving settings', 'error');
+                }
+            }
+            
+            async testConnection() {
+                try {
+                    const settings = {
+                        hostname: document.getElementById('hostname').value,
+                        port: document.getElementById('port').value,
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value,
+                        useHttps: document.getElementById('useHttps').checked
+                    };
+                    
+                    this.showResult('Testing connection...', 'info');
+                    
+                    const response = await browser.runtime.sendMessage({
+                        action: 'testConnection',
+                        settings: settings
+                    });
+                    
+                    console.log('Test response:', response);
+                    
+                    if (response && response.success) {
+                        this.showResult('Connection successful! Version: ' + response.data.server_version, 'success');
+                    } else {
+                        this.showResult('Connection failed: ' + (response?.error || 'Unknown error'), 'error');
+                    }
+                } catch (error) {
+                    console.error('Test connection error:', error);
+                    this.showResult('Test failed: ' + error.message, 'error');
+                }
+            }
+            
+            showResult(message, type) {
+                const result = document.getElementById('result');
+                result.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'}`;
+                result.textContent = message;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, creating SimpleOptions');
+            new SimpleOptions();
+        });
+    </script>
+</body>
+</html>
