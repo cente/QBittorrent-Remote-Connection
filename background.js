@@ -2,6 +2,40 @@
 class QBittorrentBackground {
   constructor() {
     this.setupListeners();
+    this.setupWebRequestInterceptor();
+  }
+
+  setupWebRequestInterceptor() {
+    // Handle HTTPS-only mode for local HTTP services
+    if (browser.webRequest && browser.webRequest.onBeforeRequest) {
+      browser.webRequest.onBeforeRequest.addListener(
+        (details) => {
+          // Allow HTTP requests to local/private networks
+          const url = new URL(details.url);
+          if (this.isLocalNetwork(url.hostname)) {
+            return { cancel: false };
+          }
+        },
+        {
+          urls: ["http://*/*", "https://*/*"]
+        },
+        ["blocking"]
+      );
+    }
+  }
+
+  isLocalNetwork(hostname) {
+    // Check if hostname is a local/private network address
+    const localPatterns = [
+      /^localhost$/i,
+      /^127\./,
+      /^192\.168\./,
+      /^10\./,
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+      /\.local$/i
+    ];
+    
+    return localPatterns.some(pattern => pattern.test(hostname));
   }
 
   setupListeners() {

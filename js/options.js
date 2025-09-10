@@ -25,6 +25,7 @@ class OptionsManager {
     document.getElementById('testWithCurl')?.addEventListener('click', () => this.showCurlCommands());
     document.getElementById('testCorsMode')?.addEventListener('click', () => this.testCorsMode());
     document.getElementById('clearDebugLog')?.addEventListener('click', () => this.clearDebugLog());
+    document.getElementById('showHttpsOnlyHelp')?.addEventListener('click', () => this.showHttpsOnlyHelp());
     
     // Auto-save on input change
     this.form.addEventListener('input', () => {
@@ -312,24 +313,42 @@ class OptionsManager {
     const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
     
     this.logDebug(`🔍 Testing basic fetch to: ${baseUrl}`);
+    this.logDebug(`ℹ️  Protocol: ${protocol}, HTTPS setting: ${config.useHttps}`);
+    
+    // Check for HTTPS-only mode warning
+    if (!config.useHttps) {
+      this.logDebug('⚠️  Note: Testing HTTP connection - Firefox HTTPS-Only mode may interfere');
+      this.logDebug('💡 If this fails, try disabling HTTPS-Only mode for this extension');
+    }
     
     try {
       const response = await fetch(baseUrl, {
         method: 'GET',
-        mode: 'no-cors'
+        mode: 'no-cors',
+        cache: 'no-cache'
       });
       
       this.logDebug(`✅ Basic fetch completed`, {
         status: response.status,
         statusText: response.statusText,
         type: response.type,
-        url: response.url
+        url: response.url,
+        redirected: response.redirected
       });
+      
+      if (response.type === 'opaque') {
+        this.logDebug('ℹ️  Response type is "opaque" - this is normal for no-cors requests');
+      }
     } catch (error) {
       this.logDebug(`❌ Basic fetch failed: ${error.message}`, {
         name: error.name,
-        stack: error.stack
+        stack: error.stack.split('\n').slice(0, 3).join('\n')
       });
+      
+      if (error.message.includes('NetworkError')) {
+        this.logDebug('🔍 NetworkError suggests HTTPS-Only mode or CORS blocking');
+        this.logDebug('💡 Try: 1) Disable HTTPS-Only mode, 2) Add extension exception, 3) Use different CORS mode');
+      }
     }
   }
 
@@ -490,6 +509,35 @@ class OptionsManager {
       
       this.logDebug('');
     }
+  }
+
+  showHttpsOnlyHelp() {
+    this.logDebug('🛡️  HTTPS-Only Mode Configuration Help');
+    this.logDebug('');
+    this.logDebug('Your Firefox is in HTTPS-Only mode, which blocks HTTP connections.');
+    this.logDebug('For local services like QBittorrent, you need to allow HTTP access.');
+    this.logDebug('');
+    this.logDebug('🔧 Solution Options:');
+    this.logDebug('');
+    this.logDebug('1. 📍 Add Site Exception (Recommended):');
+    this.logDebug('   • Click the shield icon in Firefox address bar when visiting this extension');
+    this.logDebug('   • Select "Turn off Blocking for this site"');
+    this.logDebug('   • Or go to Firefox Settings > Privacy & Security > HTTPS-Only Mode');
+    this.logDebug('   • Add your local network to exceptions');
+    this.logDebug('');
+    this.logDebug('2. 🏠 Local Network Pattern Exception:');
+    this.logDebug('   • In Firefox Settings, add these to HTTPS-Only exceptions:');
+    this.logDebug('   • http://192.168.*');
+    this.logDebug('   • http://10.*');
+    this.logDebug('   • http://172.*');
+    this.logDebug('   • http://*.local');
+    this.logDebug('');
+    this.logDebug('3. ⚙️  Temporary Disable (Not Recommended):');
+    this.logDebug('   • Firefox Settings > Privacy & Security');
+    this.logDebug('   • HTTPS-Only Mode > "Don\'t enable HTTPS-Only Mode"');
+    this.logDebug('');
+    this.logDebug('🏡 Your QBittorrent server is on your local network and doesn\'t need HTTPS.');
+    this.logDebug('Using HTTP for local services is normal and safe on home networks.');
   }
 }
 
