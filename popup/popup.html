@@ -1,99 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QBittorrent Remote</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="../css/popup.css">
 </head>
-<body>
-  <div class="popup-container" style="width: 350px; min-height: 400px;">
+<body class="bg-dark text-light">
+  <div class="popup-container" style="width: 320px; min-height: 400px;">
     <header class="bg-primary text-white p-3 d-flex justify-content-between align-items-center">
-      <h1 class="h6 mb-0">QBittorrent Remote</h1>
-      <button id="settingsBtn" class="btn btn-sm btn-outline-light" title="Settings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
-        </svg>
+      <h1 class="h6 mb-0 fw-bold">
+        <i class="bi bi-cloud-arrow-down me-2"></i>QBittorrent Remote
+      </h1>
+      <button id="settingsBtn" class="btn btn-sm btn-outline-light border-0" title="Settings">
+        <i class="bi bi-gear"></i>
       </button>
     </header>
 
     <div id="configPrompt" class="text-center p-4" style="display: none;">
       <div class="prompt-content">
-        <h3 class="h5 text-primary mb-3">Setup Required</h3>
-        <p class="text-muted mb-3">Please configure your QBittorrent server connection first.</p>
-        <button id="openSettingsBtn" class="btn btn-primary">Open Settings</button>
+        <i class="bi bi-exclamation-triangle-fill text-warning fs-1 mb-3"></i>
+        <h3 class="h5 text-warning mb-3">Setup Required</h3>
+        <p class="text-muted mb-3">Configure your QBittorrent server connection to get started.</p>
+        <button id="openSettingsBtn" class="btn btn-primary">
+          <i class="bi bi-gear me-1"></i>Open Settings
+        </button>
       </div>
     </div>
 
     <div id="mainContent" class="p-3">
-      <div id="connectionStatus" class="alert alert-info d-flex align-items-center mb-3" role="alert">
-        <span class="status-indicator me-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: #6c757d;"></span>
-        <span class="status-text">Checking connection...</span>
+      <div id="connectionStatus" class="alert d-flex align-items-center mb-3 border-0" role="alert">
+        <div class="status-indicator me-2">
+          <i class="bi bi-circle-fill" style="font-size: 8px;"></i>
+        </div>
+        <span class="status-text small">Checking connection...</span>
       </div>
 
-      <div id="serverInfo" class="card mb-3" style="display: none;">
-        <div class="card-body py-2">
-          <div class="d-flex justify-content-between small">
-            <span class="text-muted">Server:</span>
-            <span id="serverUrl" class="font-monospace">-</span>
+      <div id="serverInfo" class="card bg-dark border-secondary mb-3" style="display: none;">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted small">
+              <i class="bi bi-server me-1"></i>Server:
+            </span>
+            <span id="serverUrl" class="font-monospace small text-info">-</span>
           </div>
-          <div class="d-flex justify-content-between small">
-            <span class="text-muted">Version:</span>
-            <span id="serverVersion" class="font-monospace">-</span>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted small">
+              <i class="bi bi-info-circle me-1"></i>Version:
+            </span>
+            <span id="serverVersion" class="font-monospace small text-success">-</span>
           </div>
         </div>
       </div>
 
       <div id="quickActions" class="mb-3" style="display: none;">
-        <h3 class="h6 mb-2">Quick Actions</h3>
-        <div class="d-flex gap-2">
-          <button id="openWebUIBtn" class="btn btn-outline-primary btn-sm flex-fill">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="me-1">
-              <path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"/>
-            </svg>
-            Web UI
+        <h3 class="h6 mb-2 text-light">
+          <i class="bi bi-lightning-fill me-1"></i>Quick Actions
+        </h3>
+        <div class="d-grid gap-2">
+          <button id="openWebUIBtn" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Open Web UI
           </button>
-          <button id="refreshBtn" class="btn btn-outline-secondary btn-sm flex-fill">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="me-1">
-              <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
-            </svg>
-            Refresh
-          </button>
+          <div class="row g-2">
+            <div class="col-6">
+              <button id="refreshBtn" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+              </button>
+            </div>
+            <div class="col-6">
+              <button id="pauseAllBtn" class="btn btn-outline-warning btn-sm w-100">
+                <i class="bi bi-pause-fill me-1"></i>Pause All
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div id="torrentStats" class="mb-3" style="display: none;">
-        <h3 class="h6 mb-2">Torrent Statistics</h3>
+        <h3 class="h6 mb-2 text-light">
+          <i class="bi bi-bar-chart-fill me-1"></i>Statistics
+        </h3>
         <div class="row g-2">
           <div class="col-6">
-            <div class="card text-center">
-              <div class="card-body py-2">
-                <div class="h5 mb-0 text-primary" id="downloadingCount">-</div>
+            <div class="card bg-dark border-primary text-center">
+              <div class="card-body py-2 px-1">
+                <div class="h6 mb-0 text-primary" id="downloadingCount">
+                  <i class="bi bi-download"></i> -
+                </div>
                 <small class="text-muted">Downloading</small>
               </div>
             </div>
           </div>
           <div class="col-6">
-            <div class="card text-center">
-              <div class="card-body py-2">
-                <div class="h5 mb-0 text-success" id="seedingCount">-</div>
+            <div class="card bg-dark border-success text-center">
+              <div class="card-body py-2 px-1">
+                <div class="h6 mb-0 text-success" id="seedingCount">
+                  <i class="bi bi-upload"></i> -
+                </div>
                 <small class="text-muted">Seeding</small>
               </div>
             </div>
           </div>
           <div class="col-6">
-            <div class="card text-center">
-              <div class="card-body py-2">
-                <div class="h5 mb-0 text-warning" id="pausedCount">-</div>
+            <div class="card bg-dark border-warning text-center">
+              <div class="card-body py-2 px-1">
+                <div class="h6 mb-0 text-warning" id="pausedCount">
+                  <i class="bi bi-pause"></i> -
+                </div>
                 <small class="text-muted">Paused</small>
               </div>
             </div>
           </div>
           <div class="col-6">
-            <div class="card text-center">
-              <div class="card-body py-2">
-                <div class="h5 mb-0 text-info" id="totalCount">-</div>
+            <div class="card bg-dark border-info text-center">
+              <div class="card-body py-2 px-1">
+                <div class="h6 mb-0 text-info" id="totalCount">
+                  <i class="bi bi-list"></i> -
+                </div>
                 <small class="text-muted">Total</small>
               </div>
             </div>
@@ -101,16 +126,25 @@
         </div>
       </div>
 
-      <div id="errorMessage" class="alert alert-danger d-flex justify-content-between align-items-center" style="display: none;" role="alert">
-        <span class="error-text flex-grow-1"></span>
-        <button id="retryBtn" class="btn btn-sm btn-outline-danger">Retry</button>
+      <div id="errorMessage" class="alert alert-danger d-flex justify-content-between align-items-center border-0" style="display: none;" role="alert">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <span class="error-text small"></span>
+        </div>
+        <button id="retryBtn" class="btn btn-sm btn-outline-danger border-0">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
       </div>
     </div>
 
-    <footer class="border-top p-2 text-center">
-      <div class="small">
-        <a href="#" id="aboutLink" class="text-decoration-none me-3">About</a>
-        <a href="#" id="helpLink" class="text-decoration-none">Help</a>
+    <footer class="border-top border-secondary p-2 text-center bg-dark">
+      <div class="small text-muted">
+        <a href="#" id="aboutLink" class="text-decoration-none text-muted me-3">
+          <i class="bi bi-info-circle me-1"></i>About
+        </a>
+        <a href="#" id="helpLink" class="text-decoration-none text-muted">
+          <i class="bi bi-question-circle me-1"></i>Help
+        </a>
       </div>
     </footer>
   </div>

@@ -21,7 +21,34 @@ class OptionsManager {
     // Auto-save on input change
     this.form.addEventListener('input', () => {
       this.clearStatus();
+      this.hideConnectionResult();
+      this.validateInputs();
     });
+  }
+
+  validateInputs() {
+    const serverUrl = document.getElementById('serverUrl');
+    const port = document.getElementById('port');
+    
+    // Server URL validation
+    if (serverUrl.value.trim()) {
+      serverUrl.classList.remove('is-invalid');
+      serverUrl.classList.add('is-valid');
+    } else {
+      serverUrl.classList.remove('is-valid', 'is-invalid');
+    }
+    
+    // Port validation
+    const portValue = parseInt(port.value);
+    if (portValue && portValue >= 1 && portValue <= 65535) {
+      port.classList.remove('is-invalid');
+      port.classList.add('is-valid');
+    } else if (port.value) {
+      port.classList.remove('is-valid');
+      port.classList.add('is-invalid');
+    } else {
+      port.classList.remove('is-valid', 'is-invalid');
+    }
   }
 
   async loadConfig() {
@@ -103,29 +130,50 @@ class OptionsManager {
     try {
       this.setButtonLoading(this.testButton, true);
       this.showStatus('Testing connection...', 'info');
+      this.hideConnectionResult();
       
+      const startTime = Date.now();
       const response = await browser.runtime.sendMessage({
         action: 'testConnection',
         data: config
       });
+      const responseTime = Date.now() - startTime;
 
       if (response.success && response.data.connected) {
         this.showStatus(
           `Connection successful! QBittorrent version: ${response.data.version}`,
           'success'
         );
+        this.showConnectionResult(config, response.data.version, responseTime);
       } else {
         this.showStatus(
           `Connection failed: ${response.data.error}`,
           'error'
         );
+        this.hideConnectionResult();
       }
     } catch (error) {
       console.error('Test connection error:', error);
       this.showStatus('Connection test failed', 'error');
+      this.hideConnectionResult();
     } finally {
       this.setButtonLoading(this.testButton, false);
     }
+  }
+
+  showConnectionResult(config, version, responseTime) {
+    const protocol = config.useHttps ? 'https' : 'http';
+    const serverUrl = `${protocol}://${config.serverUrl}:${config.port}`;
+    
+    document.getElementById('testServerUrl').textContent = serverUrl;
+    document.getElementById('testServerVersion').textContent = version;
+    document.getElementById('testResponseTime').textContent = `${responseTime}ms`;
+    
+    document.getElementById('connectionResult').style.display = 'block';
+  }
+
+  hideConnectionResult() {
+    document.getElementById('connectionResult').style.display = 'none';
   }
 
   setButtonLoading(button, loading) {

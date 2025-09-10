@@ -34,6 +34,11 @@ class PopupManager {
       this.refresh();
     });
 
+    // Pause all button
+    document.getElementById('pauseAllBtn').addEventListener('click', () => {
+      this.pauseAll();
+    });
+
     // Retry button
     document.getElementById('retryBtn').addEventListener('click', () => {
       this.retry();
@@ -177,10 +182,36 @@ class PopupManager {
   updateConnectionStatus(text, status) {
     const statusElement = document.getElementById('connectionStatus');
     const statusText = statusElement.querySelector('.status-text');
-    const statusIndicator = statusElement.querySelector('.status-indicator');
+    const statusIndicator = statusElement.querySelector('.status-indicator i');
     
     statusText.textContent = text;
-    statusIndicator.className = `status-indicator ${status}`;
+    
+    // Remove existing classes
+    statusElement.classList.remove('alert-info', 'alert-success', 'alert-danger', 'alert-warning');
+    statusIndicator.classList.remove('text-secondary', 'text-success', 'text-danger', 'text-warning');
+    
+    // Apply status-specific styling
+    switch (status) {
+      case 'connected':
+        statusElement.classList.add('alert-success');
+        statusIndicator.classList.add('text-success');
+        statusIndicator.className = 'bi bi-check-circle-fill text-success';
+        break;
+      case 'disconnected':
+        statusElement.classList.add('alert-danger');
+        statusIndicator.classList.add('text-danger');
+        statusIndicator.className = 'bi bi-x-circle-fill text-danger';
+        break;
+      case 'checking':
+        statusElement.classList.add('alert-warning');
+        statusIndicator.classList.add('text-warning');
+        statusIndicator.className = 'bi bi-hourglass-split text-warning';
+        break;
+      default:
+        statusElement.classList.add('alert-info');
+        statusIndicator.classList.add('text-secondary');
+        statusIndicator.className = 'bi bi-circle-fill text-secondary';
+    }
   }
 
   updateServerInfo(version) {
@@ -215,6 +246,53 @@ class PopupManager {
 
   async retry() {
     await this.refresh();
+  }
+
+  async pauseAll() {
+    if (!this.isConnected) return;
+
+    try {
+      const response = await browser.runtime.sendMessage({
+        action: 'qbittorrentApi',
+        data: {
+          endpoint: '/api/v2/torrents/pause',
+          method: 'POST',
+          body: 'hashes=all',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          requiresAuth: true
+        }
+      });
+
+      if (response.success) {
+        this.showTemporaryStatus('All torrents paused', 'success');
+        // Refresh after a short delay
+        setTimeout(() => this.loadTorrentStats(), 1000);
+      } else {
+        this.showTemporaryStatus('Failed to pause torrents', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to pause all torrents:', error);
+      this.showTemporaryStatus('Failed to pause torrents', 'error');
+    }
+  }
+
+  showTemporaryStatus(message, type) {
+    const statusElement = document.getElementById('connectionStatus');
+    const originalText = statusElement.querySelector('.status-text').textContent;
+    const originalIcon = statusElement.querySelector('.status-indicator i').className;
+    const originalClass = statusElement.className;
+
+    // Show temporary message
+    this.updateConnectionStatus(message, type);
+
+    // Restore original status after 2 seconds
+    setTimeout(() => {
+      statusElement.querySelector('.status-text').textContent = originalText;
+      statusElement.querySelector('.status-indicator i').className = originalIcon;
+      statusElement.className = originalClass;
+    }, 2000);
   }
 
   showAbout() {
