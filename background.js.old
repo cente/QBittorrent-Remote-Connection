@@ -1,19 +1,10 @@
 // Background script for QBittorrent Remote Connection
+console.log("=== BACKGROUND SCRIPT STARTING ===");
 
-// Import QBittorrent API module
-try {
-  console.log("Loading QBittorrentAPI module...");
-  importScripts("modules/qbittorrentAPI.js");
-  console.log("QBittorrentAPI module loaded successfully");
-} catch (error) {
-  console.error("Failed to load QBittorrentAPI module:", error);
-}
-
+// Simple background script without importScripts to avoid loading issues
 class QBittorrentBackground {
   constructor() {
     console.log("QBittorrentBackground initializing...");
-    this.qbApi = new QBittorrentAPI();
-    console.log("QBittorrentAPI created successfully");
     this.setupListeners();
     this.setupWebRequestInterceptor();
     this.setupContextMenu();

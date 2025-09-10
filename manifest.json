@@ -11,14 +11,24 @@
     "https://*/*",
     "<all_urls>",
     "webRequest",
-    "webRequestBlocking"
+    "webRequestBlocking",
+    "contextMenus",
+    "notifications"
   ],
 
   "content_security_policy": "script-src 'self' 'unsafe-eval' 'unsafe-hashes'; object-src 'self'",
   
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/test.js"],
+      "run_at": "document_end"
+    }
+  ],
+  
   "background": {
-    "scripts": ["background.js"],
-    "persistent": false
+    "scripts": ["background-simple.js"],
+    "persistent": true
   },
   
   "browser_action": {
@@ -34,6 +44,7 @@
   "web_accessible_resources": [
     "icons/*",
     "vendor/bootstrap/*",
-    "vendor/bootstrap-icons/*"
+    "vendor/bootstrap-icons/*",
+    "modules/*.js"
   ]
 }

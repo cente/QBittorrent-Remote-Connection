@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QBittorrent Extension - Magnet Link Test Page</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .magnet-link {
+        background: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        padding: 10px;
+        margin: 10px 0;
+        word-break: break-all;
+        font-family: monospace;
+      }
+      .raw-magnet {
+        background: #fff3e0;
+        border: 1px solid #ff9800;
+        border-radius: 4px;
+        padding: 10px;
+        margin: 10px 0;
+        word-break: break-all;
+        font-family: monospace;
+      }
+      .info {
+        background: #e8f5e8;
+        border: 1px solid #4caf50;
+        border-radius: 4px;
+        padding: 15px;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧲 QBittorrent Remote Extension - Test Page</h1>
+
+    <div class="info">
+      <strong>Instructions:</strong>
+      <ol>
+        <li>Install the QBittorrent Remote extension</li>
+        <li>Configure your QBittorrent connection in the extension options</li>
+        <li>
+          This page contains various types of magnet links to test the extension
+          functionality
+        </li>
+        <li>
+          The extension should automatically detect and enhance these links
+        </li>
+      </ol>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 1: Standard Magnet Links</h2>
+      <p>These are regular HTML links with magnet URLs:</p>
+
+      <div class="magnet-link">
+        <a
+          href="magnet:?xt=urn:btih:1234567890abcdef1234567890abcdef12345678&dn=Test+Torrent+1&tr=udp://tracker.example.com:1337"
+        >
+          Test Torrent 1 - Ubuntu ISO
+        </a>
+      </div>
+
+      <div class="magnet-link">
+        <a
+          href="magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890abcdef12&dn=Test+Torrent+2&tr=udp://tracker.example.com:1337&tr=udp://tracker2.example.com:1337"
+        >
+          Test Torrent 2 - Linux Distribution
+        </a>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 2: Raw Magnet Links in Text</h2>
+      <p>These are raw magnet links embedded in regular text content:</p>
+
+      <div class="raw-magnet">
+        Here's a magnet link:
+        magnet:?xt=urn:btih:fedcba0987654321fedcba0987654321fedcba09&dn=Raw+Magnet+Test&tr=udp://tracker.example.com:1337
+        that should be detected.
+      </div>
+
+      <div class="raw-magnet">
+        Multiple links:
+        magnet:?xt=urn:btih:1111111111111111111111111111111111111111&dn=First+Test
+        and
+        magnet:?xt=urn:btih:2222222222222222222222222222222222222222&dn=Second+Test
+        in the same paragraph.
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 3: Dynamic Content</h2>
+      <p>
+        Click the button below to dynamically add magnet links to test the
+        mutation observer:
+      </p>
+
+      <button
+        onclick="addDynamicContent()"
+        style="
+          background: #007bff;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 4px;
+          cursor: pointer;
+        "
+      >
+        Add Dynamic Magnet Links
+      </button>
+
+      <div id="dynamicContent"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 4: Context Menu</h2>
+      <p>
+        Right-click on the magnet links above to test the context menu
+        functionality.
+      </p>
+    </div>
+
+    <div class="info">
+      <strong>Expected Behavior:</strong>
+      <ul>
+        <li>✅ Magnet links should be visually enhanced with download icons</li>
+        <li>
+          ✅ Clicking magnet links should attempt to add them to QBittorrent
+        </li>
+        <li>✅ Right-clicking should show "Add to QBittorrent" option</li>
+        <li>
+          ✅ Raw magnet URLs in text should be converted to clickable elements
+        </li>
+        <li>✅ Dynamically added content should be processed automatically</li>
+        <li>✅ Browser notifications should appear when torrents are added</li>
+      </ul>
+    </div>
+
+    <script>
+      function addDynamicContent() {
+        const container = document.getElementById("dynamicContent");
+        const newContent = document.createElement("div");
+        newContent.innerHTML = `
+                <div class="magnet-link" style="margin-top: 10px;">
+                    <a href="magnet:?xt=urn:btih:dynamic1234567890abcdef1234567890abcdef&dn=Dynamic+Test&tr=udp://tracker.example.com:1337">
+                        Dynamically Added Magnet Link ${Date.now()}
+                    </a>
+                </div>
+                <div class="raw-magnet" style="margin-top: 10px;">
+                    Raw dynamic: magnet:?xt=urn:btih:dynamic${Date.now().toString(
+                      16
+                    )}abcdef1234567890abcdef&dn=Dynamic+Raw+Test&tr=udp://tracker.example.com:1337
+                </div>
+            `;
+        container.appendChild(newContent);
+      }
+
+      // Add some test info to console
+      console.log("QBittorrent Extension Test Page loaded");
+      console.log(
+        "This page contains test magnet links for extension development"
+      );
+    </script>
+  </body>
+</html>
