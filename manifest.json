@@ -8,7 +8,8 @@
     "storage",
     "activeTab",
     "http://*/*",
-    "https://*/*"
+    "https://*/*",
+    "<all_urls>"
   ],
 
   "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'; style-src 'self' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net data:",

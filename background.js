@@ -86,21 +86,101 @@ class QBittorrentBackground {
   async testConnection(config) {
     try {
       const protocol = config.useHttps ? 'https' : 'http';
-      const url = `${protocol}://${config.serverUrl}:${config.port}/api/v2/app/version`;
+      const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
       
-      const response = await fetch(url, {
+      console.log('Testing QBittorrent API connection to:', baseUrl);
+      
+      // First, try to get the API version (this doesn't require authentication)
+      const versionUrl = `${baseUrl}/api/v2/app/version`;
+      const response = await fetch(versionUrl, {
         method: 'GET',
-        credentials: 'include'
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          'Accept': 'text/plain',
+          'User-Agent': 'QBittorrent-Remote-Extension/1.0'
+        }
       });
+
+      console.log('API Response status:', response.status);
 
       if (response.ok) {
         const version = await response.text();
-        return { connected: true, version };
+        console.log('QBittorrent API version:', version);
+        
+        // If we have credentials, test authentication
+        if (config.username && config.password) {
+          const authResult = await this.testAuthentication(config, baseUrl);
+          if (authResult.success) {
+            return { 
+              connected: true, 
+              version: version.trim(),
+              authenticated: true 
+            };
+          } else {
+            return { 
+              connected: true, 
+              version: version.trim(),
+              authenticated: false,
+              authError: authResult.error 
+            };
+          }
+        }
+        
+        return { 
+          connected: true, 
+          version: version.trim(),
+          authenticated: false 
+        };
       } else {
-        return { connected: false, error: `HTTP ${response.status}` };
+        return { 
+          connected: false, 
+          error: `QBittorrent API returned HTTP ${response.status}: ${response.statusText}`
+        };
       }
     } catch (error) {
-      return { connected: false, error: error.message };
+      console.error('QBittorrent API connection test error:', error);
+      
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        return { 
+          connected: false, 
+          error: 'Cannot reach QBittorrent server - Check if QBittorrent is running and Web UI is enabled'
+        };
+      } else {
+        return { 
+          connected: false, 
+          error: `API connection failed: ${error.message}`
+        };
+      }
+    }
+  }
+
+  async testAuthentication(config, baseUrl) {
+    try {
+      const loginUrl = `${baseUrl}/api/v2/auth/login`;
+      const formData = new FormData();
+      formData.append('username', config.username);
+      formData.append('password', config.password);
+
+      const response = await fetch(loginUrl, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.text();
+        if (result === 'Ok.') {
+          return { success: true };
+        } else {
+          return { success: false, error: 'Invalid username or password' };
+        }
+      } else {
+        return { success: false, error: `Authentication failed: HTTP ${response.status}` };
+      }
+    } catch (error) {
+      return { success: false, error: `Authentication error: ${error.message}` };
     }
   }
 
@@ -110,16 +190,25 @@ class QBittorrentBackground {
     const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
     
     try {
-      // Login first if needed
+      // Login first if needed and credentials are available
       if (requestData.requiresAuth && config.username && config.password) {
-        await this.login(config);
+        const authResult = await this.login(config, baseUrl);
+        if (!authResult.success) {
+          throw new Error(`Authentication failed: ${authResult.error}`);
+        }
       }
+
+      const requestHeaders = {
+        'User-Agent': 'QBittorrent-Remote-Extension/1.0',
+        ...requestData.headers
+      };
 
       const response = await fetch(`${baseUrl}${requestData.endpoint}`, {
         method: requestData.method || 'GET',
-        headers: requestData.headers || {},
-        body: requestData.body,
-        credentials: 'include'
+        mode: 'cors',
+        credentials: 'include',
+        headers: requestHeaders,
+        body: requestData.body
       });
 
       if (response.ok) {
@@ -127,37 +216,48 @@ class QBittorrentBackground {
         if (contentType && contentType.includes('application/json')) {
           return await response.json();
         } else {
-          return await response.text();
+          const text = await response.text();
+          return text.trim();
         }
       } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`QBittorrent API error: HTTP ${response.status} - ${response.statusText}`);
       }
     } catch (error) {
-      throw new Error(`Request failed: ${error.message}`);
+      console.error('QBittorrent API request failed:', error);
+      throw new Error(`API request failed: ${error.message}`);
     }
   }
 
-  async login(config) {
-    const protocol = config.useHttps ? 'https' : 'http';
-    const url = `${protocol}://${config.serverUrl}:${config.port}/api/v2/auth/login`;
-    
-    const formData = new FormData();
-    formData.append('username', config.username);
-    formData.append('password', config.password);
+  async login(config, baseUrl) {
+    try {
+      const url = `${baseUrl}/api/v2/auth/login`;
+      
+      const formData = new FormData();
+      formData.append('username', config.username);
+      formData.append('password', config.password);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include'
-    });
+      const response = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
+        body: formData,
+        headers: {
+          'User-Agent': 'QBittorrent-Remote-Extension/1.0'
+        }
+      });
 
-    if (!response.ok) {
-      throw new Error('Login failed');
-    }
+      if (!response.ok) {
+        return { success: false, error: `Login request failed: HTTP ${response.status}` };
+      }
 
-    const result = await response.text();
-    if (result !== 'Ok.') {
-      throw new Error('Invalid credentials');
+      const result = await response.text();
+      if (result.trim() === 'Ok.') {
+        return { success: true };
+      } else {
+        return { success: false, error: 'Invalid credentials' };
+      }
+    } catch (error) {
+      return { success: false, error: `Login error: ${error.message}` };
     }
   }
 }

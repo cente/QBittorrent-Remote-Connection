@@ -140,14 +140,21 @@ class OptionsManager {
       const responseTime = Date.now() - startTime;
 
       if (response.success && response.data.connected) {
-        this.showStatus(
-          `Connection successful! QBittorrent version: ${response.data.version}`,
-          'success'
-        );
-        this.showConnectionResult(config, response.data.version, responseTime);
+        let statusMessage = `✅ QBittorrent API connected! Version: ${response.data.version}`;
+        
+        if (response.data.authenticated === true) {
+          statusMessage += '\n🔐 Authentication successful';
+        } else if (response.data.authenticated === false && response.data.authError) {
+          statusMessage += `\n⚠️ Authentication failed: ${response.data.authError}`;
+        } else if (config.username && config.password) {
+          statusMessage += '\n⚠️ Credentials provided but authentication not tested';
+        }
+        
+        this.showStatus(statusMessage, 'success');
+        this.showConnectionResult(config, response.data.version, responseTime, response.data);
       } else {
         this.showStatus(
-          `Connection failed: ${response.data.error}`,
+          `❌ Connection failed: ${response.data.error}`,
           'error'
         );
         this.hideConnectionResult();
@@ -161,7 +168,7 @@ class OptionsManager {
     }
   }
 
-  showConnectionResult(config, version, responseTime) {
+  showConnectionResult(config, version, responseTime, testData = {}) {
     const protocol = config.useHttps ? 'https' : 'http';
     const serverUrl = `${protocol}://${config.serverUrl}:${config.port}`;
     
@@ -169,7 +176,40 @@ class OptionsManager {
     document.getElementById('testServerVersion').textContent = version;
     document.getElementById('testResponseTime').textContent = `${responseTime}ms`;
     
-    document.getElementById('connectionResult').style.display = 'block';
+    // Add authentication status if available
+    const resultCard = document.getElementById('connectionResult');
+    let authStatusHtml = '';
+    
+    if (testData.authenticated === true) {
+      authStatusHtml = `
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted">
+            <i class="bi bi-shield-check me-1"></i>Authentication:
+          </span>
+          <span class="text-success">✅ Successful</span>
+        </div>
+      `;
+    } else if (testData.authenticated === false && testData.authError) {
+      authStatusHtml = `
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted">
+            <i class="bi bi-shield-x me-1"></i>Authentication:
+          </span>
+          <span class="text-warning">⚠️ Failed</span>
+        </div>
+      `;
+    }
+    
+    if (authStatusHtml) {
+      const cardBody = resultCard.querySelector('.card-body');
+      const existingAuth = cardBody.querySelector('.auth-status');
+      if (existingAuth) {
+        existingAuth.remove();
+      }
+      cardBody.insertAdjacentHTML('beforeend', `<div class="auth-status">${authStatusHtml}</div>`);
+    }
+    
+    resultCard.style.display = 'block';
   }
 
   hideConnectionResult() {
