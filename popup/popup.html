@@ -1,241 +1,55 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QBittorrent Remote</title>
-    <link href="../vendor/bootstrap/bootstrap.min.css" rel="stylesheet" />
-    <link href="../vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <link href="../vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="../vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <style>
-      .popup-container {
-        width: 320px;
-        max-width: 100vw;
-        min-height: 400px;
-        overflow-x: hidden;
-      }
-      
-      .status-indicator {
-        animation: pulse 2s infinite;
-      }
-      
-      @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-      }
-      
-      .card {
-        border-radius: 0.375rem;
-      }
-      
-      .btn-sm {
-        font-size: 0.875rem;
-        padding: 0.25rem 0.5rem;
-      }
-      
-      .stats-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-      }
-      
-      .stat-card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 0.375rem;
-        padding: 0.5rem;
-        text-align: center;
-      }
-      
-      .stat-number {
-        font-size: 1.25rem;
-        font-weight: bold;
-        line-height: 1;
-      }
-      
-      .stat-label {
-        font-size: 0.75rem;
-        opacity: 0.8;
-        margin-top: 0.25rem;
-      }
-      
-      .footer-links a {
-        font-size: 0.75rem;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-      }
-      
-      .footer-links a:hover {
-        opacity: 1;
-      }
+        body { width: 300px; min-height: 200px; }
     </style>
-  </head>
-  <body class="bg-dark text-light">
-    <div class="popup-container">
-      <!-- Header -->
-      <div class="bg-primary p-3 d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center">
-          <i class="bi bi-cloud-arrow-down me-2" style="font-size: 1.25rem;"></i>
-          <h1 class="h6 mb-0 fw-bold">QBittorrent Remote</h1>
-        </div>
-        <button
-          id="settingsBtn"
-          class="btn btn-outline-light btn-sm border-0"
-          title="Settings"
-        >
-          <i class="bi bi-gear"></i>
-        </button>
-      </div>
-
-      <!-- Setup Prompt (shown when not configured) -->
-      <div id="configPrompt" class="text-center p-4" style="display: none">
-        <i class="bi bi-exclamation-triangle-fill text-warning mb-3" style="font-size: 3rem;"></i>
-        <h3 class="h5 text-warning mb-2">Setup Required</h3>
-        <p class="text-muted mb-3">
-          Configure your QBittorrent server connection to get started.
-        </p>
-        <button id="openSettingsBtn" class="btn btn-primary">
-          <i class="bi bi-gear me-2"></i>Open Settings
-        </button>
-      </div>
-
-      <!-- Main Content -->
-      <div id="mainContent" class="p-3">
-        <!-- Connection Status -->
-        <div id="connectionStatus" class="alert d-flex align-items-center mb-3 py-2 border-0" role="alert">
-          <div class="status-indicator me-2">
-            <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i>
-          </div>
-          <span class="status-text small">Checking connection...</span>
-        </div>
-
-        <!-- Server Info Card -->
-        <div id="serverInfo" class="card bg-dark border-secondary mb-3" style="display: none">
-          <div class="card-body p-3">
-            <h6 class="card-title mb-2">
-              <i class="bi bi-server me-1"></i>Server Information
-            </h6>
-            <div class="row g-2">
-              <div class="col-6">
-                <small class="text-muted d-block">URL</small>
-                <span id="serverUrl" class="badge bg-secondary">-</span>
-              </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Version</small>
-                <span id="serverVersion" class="badge bg-success">-</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div id="quickActions" class="mb-3" style="display: none">
-          <h6 class="mb-2">
-            <i class="bi bi-lightning-fill me-1"></i>Quick Actions
-          </h6>
-          <div class="d-grid gap-2">
-            <button id="openWebUIBtn" class="btn btn-outline-primary">
-              <i class="bi bi-box-arrow-up-right me-2"></i>Open Web UI
+</head>
+<body class="bg-dark text-light">
+    <div class="p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0"><i class="bi bi-cloud-arrow-down me-1"></i>QBittorrent</h6>
+            <button id="settingsBtn" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-gear"></i>
             </button>
-            <div class="row g-2">
-              <div class="col-6">
-                <button id="refreshBtn" class="btn btn-outline-secondary w-100">
-                  <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </div>
+        
+        <div id="configPrompt" style="display: none;">
+            <div class="text-center">
+                <i class="bi bi-exclamation-triangle text-warning mb-2" style="font-size: 2rem;"></i>
+                <p class="small mb-2">Setup Required</p>
+                <button id="openSettingsBtn" class="btn btn-primary btn-sm">Configure</button>
+            </div>
+        </div>
+        
+        <div id="mainContent">
+            <div id="connectionStatus" class="small mb-2">
+                <i class="bi bi-circle-fill me-1"></i>
+                <span id="statusText">Checking...</span>
+            </div>
+            
+            <div id="serverInfo" style="display: none;" class="mb-2">
+                <div class="small text-muted">Server: <span id="serverUrl" class="text-info">-</span></div>
+                <div class="small text-muted">Version: <span id="serverVersion" class="text-success">-</span></div>
+            </div>
+            
+            <div id="actions" style="display: none;">
+                <button id="openWebUIBtn" class="btn btn-outline-primary btn-sm w-100 mb-1">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Open Web UI
                 </button>
-              </div>
-              <div class="col-6">
-                <button id="pauseAllBtn" class="btn btn-outline-warning w-100">
-                  <i class="bi bi-pause-fill me-1"></i>Pause All
-                </button>
-              </div>
             </div>
-          </div>
+            
+            <div id="errorMsg" class="alert alert-danger py-1 px-2 small" style="display: none;">
+                <span id="errorText"></span>
+            </div>
         </div>
-
-        <!-- Torrent Statistics -->
-        <div id="torrentStats" class="mb-3" style="display: none">
-          <h6 class="mb-2">
-            <i class="bi bi-bar-chart-fill me-1"></i>Statistics
-          </h6>
-          <div class="stats-grid">
-            <div class="stat-card border-primary">
-              <div class="stat-number text-primary" id="downloadingCount">-</div>
-              <div class="stat-label">
-                <i class="bi bi-download me-1"></i>Downloading
-              </div>
-            </div>
-            <div class="stat-card border-success">
-              <div class="stat-number text-success" id="seedingCount">-</div>
-              <div class="stat-label">
-                <i class="bi bi-upload me-1"></i>Seeding
-              </div>
-            </div>
-            <div class="stat-card border-warning">
-              <div class="stat-number text-warning" id="pausedCount">-</div>
-              <div class="stat-label">
-                <i class="bi bi-pause me-1"></i>Paused
-              </div>
-            </div>
-            <div class="stat-card border-info">
-              <div class="stat-number text-info" id="totalCount">-</div>
-              <div class="stat-label">
-                <i class="bi bi-list me-1"></i>Total
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Transfer Stats -->
-        <div id="transferStats" class="mb-3" style="display: none">
-          <h6 class="mb-2">
-            <i class="bi bi-speedometer2 me-1"></i>Transfer Rates
-          </h6>
-          <div class="row g-2">
-            <div class="col-6">
-              <div class="stat-card border-primary">
-                <div class="stat-number text-primary" id="downloadSpeed">-</div>
-                <div class="stat-label">
-                  <i class="bi bi-download me-1"></i>Down
-                </div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="stat-card border-success">
-                <div class="stat-number text-success" id="uploadSpeed">-</div>
-                <div class="stat-label">
-                  <i class="bi bi-upload me-1"></i>Up
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Error Message -->
-        <div id="errorMessage" class="alert alert-danger border-0" style="display: none" role="alert">
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              <span class="error-text"></span>
-            </div>
-            <button id="retryBtn" class="btn btn-sm btn-outline-danger">
-              <i class="bi bi-arrow-clockwise"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="border-top border-secondary p-2 text-center footer-links">
-        <a href="#" id="aboutLink" class="text-decoration-none text-muted me-3">
-          <i class="bi bi-info-circle me-1"></i>About
-        </a>
-        <a href="#" id="helpLink" class="text-decoration-none text-muted">
-          <i class="bi bi-question-circle me-1"></i>Help
-        </a>
-      </div>
     </div>
 
-    <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="../js/popup.js"></script>
-  </body>
+</body>
 </html>
