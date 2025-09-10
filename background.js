@@ -90,54 +90,62 @@ class QBittorrentBackground {
       
       console.log('Testing QBittorrent API connection to:', baseUrl);
       
-      // First, try to get the API version (this doesn't require authentication)
+      // Test version endpoint first - simplest API call
       const versionUrl = `${baseUrl}/api/v2/app/version`;
-      const response = await fetch(versionUrl, {
+      const versionResponse = await fetch(versionUrl, {
         method: 'GET',
         mode: 'cors',
         credentials: 'omit',
         headers: {
-          'Accept': 'text/plain',
-          'User-Agent': 'QBittorrent-Remote-Extension/1.0'
+          'Accept': 'text/plain'
         }
       });
 
-      console.log('API Response status:', response.status);
+      console.log('Version API Response status:', versionResponse.status);
 
-      if (response.ok) {
-        const version = await response.text();
-        console.log('QBittorrent API version:', version);
-        
-        // If we have credentials, test authentication
-        if (config.username && config.password) {
-          const authResult = await this.testAuthentication(config, baseUrl);
-          if (authResult.success) {
-            return { 
-              connected: true, 
-              version: version.trim(),
-              authenticated: true 
-            };
-          } else {
-            return { 
-              connected: true, 
-              version: version.trim(),
-              authenticated: false,
-              authError: authResult.error 
-            };
-          }
+      if (!versionResponse.ok) {
+        return { 
+          connected: false, 
+          error: `QBittorrent API returned HTTP ${versionResponse.status}: ${versionResponse.statusText}`
+        };
+      }
+
+      const version = await versionResponse.text();
+      console.log('QBittorrent API version:', version);
+      
+      // Test torrents endpoint to verify data access (should work without auth for local)
+      const torrentsUrl = `${baseUrl}/api/v2/torrents/info`;
+      const torrentsResponse = await fetch(torrentsUrl, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          'Accept': 'application/json'
         }
+      });
+
+      console.log('Torrents API Response status:', torrentsResponse.status);
+
+      if (torrentsResponse.ok) {
+        const torrents = await torrentsResponse.json();
+        console.log('Found torrents:', torrents.length);
         
         return { 
           connected: true, 
           version: version.trim(),
-          authenticated: false 
+          authenticated: true, // Local access without auth
+          torrentCount: torrents.length
         };
       } else {
+        // Version works but torrents doesn't - might need auth
         return { 
-          connected: false, 
-          error: `QBittorrent API returned HTTP ${response.status}: ${response.statusText}`
+          connected: true, 
+          version: version.trim(),
+          authenticated: false,
+          authError: `Torrents access failed: HTTP ${torrentsResponse.status}`
         };
       }
+
     } catch (error) {
       console.error('QBittorrent API connection test error:', error);
       

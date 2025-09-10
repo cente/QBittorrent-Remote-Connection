@@ -142,10 +142,14 @@ class OptionsManager {
       if (response.success && response.data.connected) {
         let statusMessage = `✅ QBittorrent API connected! Version: ${response.data.version}`;
         
+        if (response.data.torrentCount !== undefined) {
+          statusMessage += ` (${response.data.torrentCount} torrents)`;
+        }
+        
         if (response.data.authenticated === true) {
-          statusMessage += '\n🔐 Authentication successful';
+          statusMessage += '\n🔐 Access granted - API working properly';
         } else if (response.data.authenticated === false && response.data.authError) {
-          statusMessage += `\n⚠️ Authentication failed: ${response.data.authError}`;
+          statusMessage += `\n⚠️ Data access issue: ${response.data.authError}`;
         } else if (config.username && config.password) {
           statusMessage += '\n⚠️ Credentials provided but authentication not tested';
         }
