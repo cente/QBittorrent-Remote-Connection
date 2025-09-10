@@ -1,0 +1,45 @@
+{
+  "manifest_version": 2,
+  "name": "QBittorrent Remote Connection",
+  "version": "1.0.0",
+  "description": "Firefox extension for managing remote QBittorrent connections",
+  
+  "permissions": [
+    "storage",
+    "activeTab",
+    "http://*/*",
+    "https://*/*"
+  ],
+  
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  
+  "browser_action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "QBittorrent Remote",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  
+  "web_accessible_resources": [
+    "icons/*"
+  ]
+}

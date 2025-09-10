@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QBittorrent Remote Connection - Settings</title>
+  <link rel="stylesheet" href="../css/options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>QBittorrent Remote Connection</h1>
+      <p>Configure your QBittorrent server connection settings</p>
+    </header>
+
+    <main>
+      <form id="configForm">
+        <div class="form-section">
+          <h2>Server Configuration</h2>
+          
+          <div class="form-group">
+            <label for="serverUrl">Server URL/IP Address:</label>
+            <input type="text" id="serverUrl" name="serverUrl" placeholder="192.168.1.100 or qbittorrent.local" required>
+            <small>Enter the IP address or hostname of your QBittorrent server</small>
+          </div>
+
+          <div class="form-group">
+            <label for="port">Port:</label>
+            <input type="number" id="port" name="port" placeholder="8080" min="1" max="65535" required>
+            <small>Default QBittorrent Web UI port is 8080</small>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="useHttps" name="useHttps">
+              <span class="checkmark"></span>
+              Use HTTPS (SSL/TLS)
+            </label>
+            <small>Enable if your QBittorrent server uses HTTPS</small>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Authentication</h2>
+          
+          <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" autocomplete="username">
+            <small>QBittorrent Web UI username</small>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" autocomplete="current-password">
+            <small>QBittorrent Web UI password</small>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="autoLogin" name="autoLogin">
+              <span class="checkmark"></span>
+              Auto-login when extension opens
+            </label>
+            <small>Automatically authenticate when using the extension</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="testConnection" class="btn btn-secondary">
+            <span class="btn-text">Test Connection</span>
+            <span class="spinner" style="display: none;"></span>
+          </button>
+          <button type="submit" id="saveConfig" class="btn btn-primary">
+            <span class="btn-text">Save Configuration</span>
+            <span class="spinner" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+
+      <div id="statusMessage" class="status-message" style="display: none;">
+        <span class="status-text"></span>
+      </div>
+
+      <div class="info-section">
+        <h3>Setup Instructions</h3>
+        <ol>
+          <li>Ensure QBittorrent Web UI is enabled in QBittorrent settings</li>
+          <li>Note the Web UI port (usually 8080) and IP address of your QBittorrent server</li>
+          <li>Enter your QBittorrent Web UI username and password</li>
+          <li>Test the connection to verify settings</li>
+          <li>Save your configuration</li>
+        </ol>
+        
+        <div class="warning">
+          <strong>Security Note:</strong> Your credentials are stored locally in your browser and are only sent to your configured QBittorrent server.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/options.js"></script>
+</body>
+</html>
