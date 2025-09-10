@@ -10,6 +10,8 @@
     "http://*/*",
     "https://*/*"
   ],
+
+  "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'",
   
   "background": {
     "scripts": ["background.js"],
@@ -18,25 +20,12 @@
   
   "browser_action": {
     "default_popup": "popup/popup.html",
-    "default_title": "QBittorrent Remote",
-    "default_icon": {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
-    }
+    "default_title": "QBittorrent Remote"
   },
   
   "options_ui": {
     "page": "options/options.html",
     "open_in_tab": true
-  },
-  
-  "icons": {
-    "16": "icons/icon-16.png",
-    "32": "icons/icon-32.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
   },
   
   "web_accessible_resources": [

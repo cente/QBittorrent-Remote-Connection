@@ -4,55 +4,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QBittorrent Remote</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../css/popup.css">
 </head>
 <body>
-  <div class="popup-container">
-    <header class="popup-header">
-      <h1>QBittorrent Remote</h1>
-      <button id="settingsBtn" class="settings-btn" title="Settings">
+  <div class="popup-container" style="width: 350px; min-height: 400px;">
+    <header class="bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+      <h1 class="h6 mb-0">QBittorrent Remote</h1>
+      <button id="settingsBtn" class="btn btn-sm btn-outline-light" title="Settings">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
         </svg>
       </button>
     </header>
 
-    <div id="configPrompt" class="config-prompt" style="display: none;">
+    <div id="configPrompt" class="text-center p-4" style="display: none;">
       <div class="prompt-content">
-        <h3>Setup Required</h3>
-        <p>Please configure your QBittorrent server connection first.</p>
+        <h3 class="h5 text-primary mb-3">Setup Required</h3>
+        <p class="text-muted mb-3">Please configure your QBittorrent server connection first.</p>
         <button id="openSettingsBtn" class="btn btn-primary">Open Settings</button>
       </div>
     </div>
 
-    <div id="mainContent" class="main-content">
-      <div id="connectionStatus" class="connection-status">
-        <span class="status-indicator"></span>
+    <div id="mainContent" class="p-3">
+      <div id="connectionStatus" class="alert alert-info d-flex align-items-center mb-3" role="alert">
+        <span class="status-indicator me-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: #6c757d;"></span>
         <span class="status-text">Checking connection...</span>
       </div>
 
-      <div id="serverInfo" class="server-info" style="display: none;">
-        <div class="info-item">
-          <span class="label">Server:</span>
-          <span id="serverUrl" class="value">-</span>
-        </div>
-        <div class="info-item">
-          <span class="label">Version:</span>
-          <span id="serverVersion" class="value">-</span>
+      <div id="serverInfo" class="card mb-3" style="display: none;">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between small">
+            <span class="text-muted">Server:</span>
+            <span id="serverUrl" class="font-monospace">-</span>
+          </div>
+          <div class="d-flex justify-content-between small">
+            <span class="text-muted">Version:</span>
+            <span id="serverVersion" class="font-monospace">-</span>
+          </div>
         </div>
       </div>
 
-      <div id="quickActions" class="quick-actions" style="display: none;">
-        <h3>Quick Actions</h3>
-        <div class="action-buttons">
-          <button id="openWebUIBtn" class="btn btn-secondary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <div id="quickActions" class="mb-3" style="display: none;">
+        <h3 class="h6 mb-2">Quick Actions</h3>
+        <div class="d-flex gap-2">
+          <button id="openWebUIBtn" class="btn btn-outline-primary btn-sm flex-fill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="me-1">
               <path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"/>
             </svg>
-            Open Web UI
+            Web UI
           </button>
-          <button id="refreshBtn" class="btn btn-secondary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <button id="refreshBtn" class="btn btn-outline-secondary btn-sm flex-fill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="me-1">
               <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
             </svg>
             Refresh
@@ -60,42 +63,59 @@
         </div>
       </div>
 
-      <div id="torrentStats" class="torrent-stats" style="display: none;">
-        <h3>Torrent Statistics</h3>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-value" id="downloadingCount">-</span>
-            <span class="stat-label">Downloading</span>
+      <div id="torrentStats" class="mb-3" style="display: none;">
+        <h3 class="h6 mb-2">Torrent Statistics</h3>
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="card text-center">
+              <div class="card-body py-2">
+                <div class="h5 mb-0 text-primary" id="downloadingCount">-</div>
+                <small class="text-muted">Downloading</small>
+              </div>
+            </div>
           </div>
-          <div class="stat-item">
-            <span class="stat-value" id="seedingCount">-</span>
-            <span class="stat-label">Seeding</span>
+          <div class="col-6">
+            <div class="card text-center">
+              <div class="card-body py-2">
+                <div class="h5 mb-0 text-success" id="seedingCount">-</div>
+                <small class="text-muted">Seeding</small>
+              </div>
+            </div>
           </div>
-          <div class="stat-item">
-            <span class="stat-value" id="pausedCount">-</span>
-            <span class="stat-label">Paused</span>
+          <div class="col-6">
+            <div class="card text-center">
+              <div class="card-body py-2">
+                <div class="h5 mb-0 text-warning" id="pausedCount">-</div>
+                <small class="text-muted">Paused</small>
+              </div>
+            </div>
           </div>
-          <div class="stat-item">
-            <span class="stat-value" id="totalCount">-</span>
-            <span class="stat-label">Total</span>
+          <div class="col-6">
+            <div class="card text-center">
+              <div class="card-body py-2">
+                <div class="h5 mb-0 text-info" id="totalCount">-</div>
+                <small class="text-muted">Total</small>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div id="errorMessage" class="error-message" style="display: none;">
-        <span class="error-text"></span>
-        <button id="retryBtn" class="btn btn-small">Retry</button>
+      <div id="errorMessage" class="alert alert-danger d-flex justify-content-between align-items-center" style="display: none;" role="alert">
+        <span class="error-text flex-grow-1"></span>
+        <button id="retryBtn" class="btn btn-sm btn-outline-danger">Retry</button>
       </div>
     </div>
 
-    <footer class="popup-footer">
-      <div class="footer-links">
-        <a href="#" id="aboutLink">About</a>
-        <a href="#" id="helpLink">Help</a>
+    <footer class="border-top p-2 text-center">
+      <div class="small">
+        <a href="#" id="aboutLink" class="text-decoration-none me-3">About</a>
+        <a href="#" id="helpLink" class="text-decoration-none">Help</a>
       </div>
     </footer>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../js/popup.js"></script>
 </body>
 </html>

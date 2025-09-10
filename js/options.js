@@ -130,16 +130,16 @@ class OptionsManager {
 
   setButtonLoading(button, loading) {
     const text = button.querySelector('.btn-text');
-    const spinner = button.querySelector('.spinner');
+    const spinner = button.querySelector('.spinner-border');
     
     if (loading) {
       button.disabled = true;
-      text.style.display = 'none';
-      spinner.style.display = 'inline-block';
+      if (text) text.style.display = 'none';
+      if (spinner) spinner.style.display = 'inline-block';
     } else {
       button.disabled = false;
-      text.style.display = 'inline';
-      spinner.style.display = 'none';
+      if (text) text.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
     }
   }
 
@@ -147,7 +147,18 @@ class OptionsManager {
     const statusText = this.statusMessage.querySelector('.status-text');
     statusText.textContent = message;
     
-    this.statusMessage.className = `status-message ${type}`;
+    // Remove existing Bootstrap alert classes
+    this.statusMessage.classList.remove('alert-success', 'alert-danger', 'alert-info');
+    
+    // Add appropriate Bootstrap alert class
+    if (type === 'success') {
+      this.statusMessage.classList.add('alert-success');
+    } else if (type === 'error') {
+      this.statusMessage.classList.add('alert-danger');
+    } else if (type === 'info') {
+      this.statusMessage.classList.add('alert-info');
+    }
+    
     this.statusMessage.style.display = 'block';
     
     // Auto-hide success messages after 3 seconds
