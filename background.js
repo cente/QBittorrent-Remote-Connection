@@ -1,56 +1,391 @@
-// Background script for QBittorrent Remote Connection
+console.log("um.. hello?");
 
-// Import QBittorrent API module
-try {
-  console.log("Loading QBittorrentAPI module...");
-  importScripts("modules/qbittorrentAPI.js");
-  console.log("QBittorrentAPI module loaded successfully");
-} catch (error) {
-  console.error("Failed to load QBittorrentAPI module:", error);
+// Simple background script for QBittorrent extension
+console.log("QBittorrent Background Script Starting...");
+
+// Handle messages from content scripts
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  console.log("Background received message:", request);
+
+  if (request.type === "UPDATE_BADGE") {
+    // Update badge with magnet count
+    const badgeText =
+      request.magnetCount > 0 ? request.magnetCount.toString() : "";
+    const badgeColor = request.magnetCount > 0 ? "#ff6b6b" : "#666666";
+
+    chrome.browserAction.setBadgeText({
+      text: badgeText,
+      tabId: sender.tab.id,
+    });
+
+    chrome.browserAction.setBadgeBackgroundColor({
+      color: badgeColor,
+      tabId: sender.tab.id,
+    });
+
+    console.log(
+      `✅ Badge updated: ${badgeText} magnets on tab ${sender.tab.id}`
+    );
+    sendResponse({ success: true, badgeText: badgeText });
+  } else if (request.type === "MAGNET_CLICKED") {
+    // Send magnet to QBittorrent and show notification only on success
+    console.log("🎯 Sending magnet to QBittorrent server...");
+
+    sendMagnetToQBittorrent(request.magnetUrl, request.linkText)
+      .then((result) => {
+        console.log("✅ Magnet send result:", result);
+
+        // Include background logs in the response for UI visibility
+        const logMessages = [
+          "🎯 Background: Sending magnet to QBittorrent server...",
+          `✅ Background: Magnet send result: ${JSON.stringify(
+            result,
+            null,
+            2
+          )}`,
+        ];
+
+        if (result.success) {
+          logMessages.push(
+            "🎉 Background: SUCCESS - Magnet added to QBittorrent!"
+          );
+
+          // Show success notification
+          const notificationId = "magnet-success-" + Date.now();
+          chrome.notifications.create(
+            notificationId,
+            {
+              type: "basic",
+              iconUrl: "icons/icon-48.png",
+              title: "QBittorrent - Torrent Added",
+              message: `Successfully added: ${
+                request.linkText || "Unknown torrent"
+              }`,
+              contextMessage: `From: ${new URL(request.pageUrl).hostname}`,
+              priority: 1,
+            },
+            function (notificationId) {
+              if (chrome.runtime.lastError) {
+                console.log(
+                  "Success notification error:",
+                  chrome.runtime.lastError
+                );
+              } else {
+                console.log(
+                  `✅ Success notification created: ${notificationId}`
+                );
+              }
+            }
+          );
+
+          // Update badge color to indicate success
+          chrome.browserAction.setBadgeBackgroundColor({
+            color: "#90EE90", // Green to indicate success
+            tabId: sender.tab.id,
+          });
+        } else {
+          // Handle different types of failures
+          const notificationId = result.isDuplicate
+            ? "magnet-duplicate-" + Date.now()
+            : "magnet-error-" + Date.now();
+
+          const notificationConfig = result.isDuplicate
+            ? {
+                type: "basic",
+                iconUrl: "icons/icon-48.png",
+                title: "⚠️ QBittorrent - Duplicate Torrent",
+                message: `Already in queue: ${
+                  request.linkText || "Unknown torrent"
+                }`,
+                contextMessage: `This torrent is already being downloaded`,
+                priority: 1, // Lower priority for duplicates
+              }
+            : {
+                type: "basic",
+                iconUrl: "icons/icon-48.png",
+                title: "❌ QBittorrent - Error",
+                message: `Failed to add: ${
+                  result.userMessage || result.message || "Unknown error"
+                }`,
+                contextMessage: `From: ${new URL(request.pageUrl).hostname}`,
+                priority: 2,
+              };
+
+          chrome.notifications.create(
+            notificationId,
+            notificationConfig,
+            function (notificationId) {
+              if (chrome.runtime.lastError) {
+                console.log(
+                  "Error notification error:",
+                  chrome.runtime.lastError
+                );
+              } else {
+                const logMessage = result.isDuplicate
+                  ? `⚠️ Duplicate notification created: ${notificationId}`
+                  : `❌ Error notification created: ${notificationId}`;
+                console.log(logMessage);
+              }
+            }
+          );
+
+          // Update badge color based on error type
+          chrome.browserAction.setBadgeBackgroundColor({
+            color: result.isDuplicate ? "#FFA500" : "#ff6b6b", // Orange for duplicates, Red for errors
+            tabId: sender.tab.id,
+          });
+        }
+
+        // Send response with logs for UI visibility
+        sendResponse({
+          ...result,
+          backgroundLogs: logMessages,
+        });
+      })
+      .catch((error) => {
+        console.error("❌ Magnet send failed:", error);
+
+        // Show error notification
+        const notificationId = "magnet-error-" + Date.now();
+        chrome.notifications.create(
+          notificationId,
+          {
+            type: "basic",
+            iconUrl: "icons/icon-48.png",
+            title: "QBittorrent - Connection Error",
+            message: `Failed to connect to QBittorrent: ${
+              error.message || "Unknown error"
+            }`,
+            contextMessage: `From: ${new URL(request.pageUrl).hostname}`,
+            priority: 2,
+          },
+          function (notificationId) {
+            if (chrome.runtime.lastError) {
+              console.log(
+                "Error notification error:",
+                chrome.runtime.lastError
+              );
+            } else {
+              console.log(`❌ Error notification created: ${notificationId}`);
+            }
+          }
+        );
+
+        // Update badge color to indicate error
+        chrome.browserAction.setBadgeBackgroundColor({
+          color: "#ff6b6b", // Red to indicate error
+          tabId: sender.tab.id,
+        });
+
+        sendResponse({
+          success: false,
+          message: error.message || "Failed to send magnet",
+          error: error,
+          backgroundLogs: [
+            "🎯 Background: Sending magnet to QBittorrent server...",
+            `❌ Background: Magnet send failed: ${error.message}`,
+            `❌ Background: Full error: ${JSON.stringify(
+              error,
+              Object.getOwnPropertyNames(error),
+              2
+            )}`,
+          ],
+        });
+      });
+
+    // Reset badge color after 5 seconds
+    setTimeout(() => {
+      chrome.browserAction.setBadgeBackgroundColor({
+        color: "#ff6b6b",
+        tabId: sender.tab.id,
+      });
+    }, 5000);
+
+    return true; // Keep message channel open for async response
+  } else if (request.type === "SEND_MAGNET_TO_QBITTORRENT") {
+    // Handle sending magnet to QBittorrent server
+    console.log("=== SENDING MAGNET TO QBITTORRENT ===");
+    console.log("🧲 Magnet URL:", request.magnetUrl);
+
+    sendMagnetToQBittorrent(request.magnetUrl, request.linkText)
+      .then((result) => {
+        console.log("✅ Magnet send result:", result);
+        sendResponse(result);
+      })
+      .catch((error) => {
+        console.error("❌ Magnet send failed:", error);
+        sendResponse({
+          success: false,
+          message: error.message || "Failed to send magnet",
+          error: error,
+        });
+      });
+
+    return true; // Keep message channel open for async response
+  }
+
+  return true; // Keep message channel open for async response
+});
+
+// Clear badge when tab is updated (page navigation)
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+  if (changeInfo.status === "loading") {
+    chrome.browserAction.setBadgeText({
+      text: "",
+      tabId: tabId,
+    });
+  }
+});
+
+console.log("✅ Background script initialized - ready for magnet detection");
+
+/**
+ * Send magnet link to QBittorrent server
+ */
+async function sendMagnetToQBittorrent(magnetUrl, linkText) {
+  console.log("=== QBITTORRENT API: SENDING MAGNET ===");
+  console.log("🧲 Magnet URL:", magnetUrl);
+  console.log("📄 Link text:", linkText);
+
+  try {
+    // Load settings
+    console.log("📋 Loading QBittorrent settings...");
+    const result = await browser.storage.local.get(["qbittorrent_settings"]);
+    const settings = result.qbittorrent_settings || {};
+
+    // Apply defaults
+    const config = {
+      hostname: "localhost",
+      port: "8080",
+      username: "admin",
+      password: "adminadmin",
+      useHttps: false,
+      ...settings,
+    };
+
+    console.log("⚙️ Using config:", {
+      hostname: config.hostname,
+      port: config.port,
+      username: config.username,
+      password: "[HIDDEN]",
+      useHttps: config.useHttps,
+    });
+
+    const protocol = config.useHttps ? "https" : "http";
+    const baseUrl = `${protocol}://${config.hostname}:${config.port}`;
+
+    console.log("🔗 Base URL:", baseUrl);
+
+    // Skip authentication for servers that don't require it (like blackbox:20000)
+    // If hostname is 'blackbox' or if auth is disabled, skip auth step
+    const skipAuth = config.hostname === "blackbox" || config.skipAuth === true;
+
+    if (!skipAuth) {
+      // Step 1: Authenticate (only if needed)
+      console.log("🔐 Authenticating with QBittorrent...");
+      const authFormData = new FormData();
+      authFormData.append("username", config.username);
+      authFormData.append("password", config.password);
+
+      const authResponse = await fetch(`${baseUrl}/api/v2/auth/login`, {
+        method: "POST",
+        body: authFormData,
+        credentials: "include",
+      });
+
+      console.log("🔐 Auth response status:", authResponse.status);
+      const authResult = await authResponse.text();
+      console.log("🔐 Auth response:", authResult);
+
+      if (authResult !== "Ok.") {
+        throw new Error(`Authentication failed: ${authResult}`);
+      }
+    } else {
+      console.log("🔓 Skipping authentication for this server");
+    }
+
+    // Step 2: Add magnet
+    console.log("📥 Adding magnet to QBittorrent...");
+    const magnetFormData = new FormData();
+    magnetFormData.append("urls", magnetUrl);
+    magnetFormData.append("category", "WebExtension");
+    magnetFormData.append("paused", "false");
+
+    const magnetResponse = await fetch(`${baseUrl}/api/v2/torrents/add`, {
+      method: "POST",
+      body: magnetFormData,
+      credentials: "include",
+    });
+
+    console.log("📥 Magnet response status:", magnetResponse.status);
+    const magnetResult = await magnetResponse.text();
+    console.log("📥 Magnet response:", magnetResult);
+
+    if (magnetResult === "Ok.") {
+      console.log("✅ Magnet added successfully to QBittorrent");
+      return {
+        success: true,
+        message: "Torrent added successfully",
+        magnetUrl: magnetUrl,
+        linkText: linkText,
+      };
+    } else if (magnetResult === "Fails.") {
+      console.log("⚠️ Magnet already exists in QBittorrent (duplicate)");
+      return {
+        success: false,
+        isDuplicate: true,
+        message: "Torrent already exists in your download queue",
+        userMessage: "This torrent is already in your QBittorrent downloads",
+        magnetUrl: magnetUrl,
+        linkText: linkText,
+        serverResponse: magnetResult,
+      };
+    } else {
+      console.log(
+        "❌ QBittorrent rejected magnet with response:",
+        magnetResult
+      );
+      return {
+        success: false,
+        message: `QBittorrent rejected the torrent: ${magnetResult}`,
+        userMessage: `Server responded with: ${magnetResult}`,
+        magnetUrl: magnetUrl,
+        linkText: linkText,
+        serverResponse: magnetResult,
+      };
+    }
+  } catch (error) {
+    console.error("❌ QBittorrent API error:", error);
+    return {
+      success: false,
+      message: error.message,
+      magnetUrl: magnetUrl,
+      linkText: linkText,
+      error: error,
+    };
+  }
 }
 
 class QBittorrentBackground {
   constructor() {
-    console.log("QBittorrentBackground initializing...");
-    this.qbApi = new QBittorrentAPI();
-    console.log("QBittorrentAPI created successfully");
-    this.setupListeners();
-    this.setupWebRequestInterceptor();
-    this.setupContextMenu();
-    console.log("QBittorrentBackground initialization complete");
-  }
-
-  setupWebRequestInterceptor() {
-    // Handle HTTPS-only mode for local HTTP services
-    if (browser.webRequest && browser.webRequest.onBeforeRequest) {
-      browser.webRequest.onBeforeRequest.addListener(
-        (details) => {
-          // Allow HTTP requests to local/private networks
-          const url = new URL(details.url);
-          if (this.isLocalNetwork(url.hostname)) {
-            return { cancel: false };
-          }
-        },
-        {
-          urls: ["http://*/*", "https://*/*"],
-        },
-        ["blocking"]
+    this.connectionStatus = {
+      connected: false,
+      lastChecked: null,
+      lastResult: null,
+      lastError: null,
+      settings: null,
+    };
+    this.pollInterval = null;
+    this.pollSettings = null;
+    // Heartbeat interval for background script
+    setInterval(() => {
+      console.log(
+        "⏰ Background script heartbeat: " + new Date().toISOString()
       );
-    }
-  }
-
-  isLocalNetwork(hostname) {
-    // Check if hostname is a local/private network address
-    const localPatterns = [
-      /^localhost$/i,
-      /^127\./,
-      /^192\.168\./,
-      /^10\./,
-      /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
-      /\.local$/i,
-    ];
-
-    return localPatterns.some((pattern) => pattern.test(hostname));
+    }, 2000);
+    console.log("QBittorrentBackground initializing...");
+    this.setupListeners();
+    console.log("QBittorrentBackground initialization complete");
   }
 
   setupListeners() {
@@ -59,199 +394,136 @@ class QBittorrentBackground {
     // Handle extension installation
     browser.runtime.onInstalled.addListener((details) => {
       console.log("Extension installed/updated:", details);
-      if (details.reason === "install") {
-        console.log("First install detected");
-        this.handleFirstInstall();
-      }
     });
 
-    // Handle messages from popup, options, and content scripts
-    console.log("Setting up message listener...");
-    browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      console.log("Background script received message:", message);
-      this.handleMessage(message, sender, sendResponse);
-      return true; // Keep message channel open for async response
-    });
-    console.log("Message listener set up successfully");
-    console.log("All listeners set up successfully");
-  }
+    // Handle messages from popup and options pages
+    // DISABLED: This conflicts with the main message handler for MAGNET_CLICKED
+    // browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    //   console.log("=== MESSAGE RECEIVED IN BACKGROUND ===");
+    //   console.log("Message:", message);
+    //   console.log("Sender:", sender);
+    //   console.log("Time:", new Date().toISOString());
 
-  setupContextMenu() {
-    // Create context menu for magnet links
-    browser.contextMenus.create({
-      id: "addMagnetToQBittorrent",
-      title: "Add to QBittorrent",
-      contexts: ["link"],
-      targetUrlPatterns: ["magnet:*"],
-    });
+    //   // Handle async operations
+    //   this.handleMessage(message, sender, sendResponse);
+    //   return true; // Keep message channel open for async response
+    // });
 
-    // Handle context menu clicks
-    browser.contextMenus.onClicked.addListener(async (info, tab) => {
-      if (info.menuItemId === "addMagnetToQBittorrent" && info.linkUrl) {
-        await this.handleAddMagnet(info.linkUrl);
-      }
-    });
-  }
-
-  async handleFirstInstall() {
-    // Set default configuration on first install
-    await this.setDefaultConfig();
-
-    // Open options page
-    browser.tabs.create({
-      url: browser.runtime.getURL("options/options.html"),
-    });
-  }
-
-  async setDefaultConfig() {
-    const defaultConfig = {
-      serverUrl: "",
-      username: "",
-      password: "",
-      port: "8080",
-      useHttps: false,
-      autoLogin: false,
-    };
-
-    await browser.storage.local.set({ config: defaultConfig });
+    console.log("Listeners set up successfully");
   }
 
   async handleMessage(message, sender, sendResponse) {
     console.log("=== BACKGROUND: HANDLING MESSAGE ===");
-    console.log("Message object:", message);
-    console.log("Message action:", message.action);
-    console.log("Message data/settings:", message.data || message.settings);
+    console.log("Message received:", message);
     console.log("Sender:", sender);
 
     try {
-      switch (message.action) {
-        case "getConfig":
-          console.log("=== BACKGROUND: GET CONFIG ===");
-          const config = await this.getConfig();
-          console.log("Retrieved config:", config);
-          sendResponse({ success: true, data: config });
-          break;
+      const { action } = message;
+      console.log("Action to handle:", action);
 
-        case "saveConfig":
-          console.log("=== BACKGROUND: SAVE CONFIG ===");
-          console.log("Config to save:", message.data);
-          await this.saveConfig(message.data);
-          console.log("Config saved successfully");
-          sendResponse({ success: true });
-          break;
-
+      switch (action) {
         case "testConnection":
           console.log("=== BACKGROUND: TEST CONNECTION ===");
-          // Handle both old format (message.data) and new format (message.settings)
-          const connectionConfig = message.settings || message.data;
-          console.log("Connection config received:", {
-            ...connectionConfig,
-            password: connectionConfig?.password ? "[HIDDEN]" : "",
-          });
-
-          const result = await this.testConnection(connectionConfig);
+          console.log("Connection config:", message.settings || message.config);
+          const result = await this.testConnection(
+            message.settings || message.config
+          );
           console.log("Test connection result:", result);
           sendResponse({ success: true, data: result });
+          // Start polling if successful
+          if (result.connected) {
+            this.startPolling(message.settings || message.config);
+          }
           break;
-
-        case "makeRequest":
-          // Handle QBittorrent API requests with settings
-          const apiResult = await this.makeQBittorrentRequest(
-            message.settings,
-            message.endpoint,
-            message.method,
-            message.data
-          );
-          sendResponse({ success: true, data: apiResult });
+        case "getConnectionStatus":
+          sendResponse({
+            success: true,
+            status: this.connectionStatus,
+          });
           break;
-
-        case "qbittorrentApi":
-          const legacyApiResult = await this.makeQBittorrentRequest(
-            message.data
-          );
-          sendResponse({ success: true, data: legacyApiResult });
-          break;
-
-        case "addMagnet":
-          const magnetResult = await this.handleAddMagnet(
-            message.magnetUrl,
-            message.options
-          );
-          sendResponse(magnetResult);
-          break;
-
-        case "showMagnetContextMenu":
-          // Context menu is already set up, this just acknowledges the request
-          sendResponse({ success: true });
-          break;
-
-        case "getMagnetSettings":
-          const magnetSettings = await this.getMagnetSettings();
-          sendResponse({ success: true, data: magnetSettings });
-          break;
-
-        case "saveMagnetSettings":
-          await this.saveMagnetSettings(message.settings);
-          sendResponse({ success: true });
-          break;
-
         default:
           console.log("=== BACKGROUND: UNKNOWN ACTION ===");
           console.log("Unknown action:", message.action);
           sendResponse({ success: false, error: "Unknown action" });
       }
     } catch (error) {
-      console.error("=== BACKGROUND SCRIPT ERROR ===");
-      console.error("Error object:", error);
-      console.error("Error name:", error.name);
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-      console.error("Original message:", message);
+      console.error("=== ERROR HANDLING MESSAGE ===");
+      console.error("Error:", error);
       sendResponse({ success: false, error: error.message });
     }
   }
 
-  async getConfig() {
-    const result = await browser.storage.local.get("config");
-    return result.config || {};
+  /**
+   * Start polling the qBittorrent connection every 5 seconds
+   */
+  startPolling(settings) {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+    this.pollSettings = settings;
+    this.pollInterval = setInterval(() => {
+      this.pollConnection();
+    }, 5000);
+    // Immediately poll once
+    this.pollConnection();
+    console.log("Started polling qBittorrent connection every 5 seconds.");
   }
 
-  async saveConfig(config) {
-    await browser.storage.local.set({ config });
-  }
-
-  async testConnection(settings) {
-    console.log("=== BACKGROUND: TEST CONNECTION METHOD ===");
+  /**
+   * Poll the qBittorrent connection and update status
+   */
+  async pollConnection() {
+    if (!this.pollSettings) return;
     try {
-      console.log("Input settings:", {
-        ...settings,
-        password: settings?.password ? "[HIDDEN]" : "",
-      });
+      const result = await this.testConnection(this.pollSettings);
+      this.connectionStatus = {
+        connected: result.connected,
+        lastChecked: new Date().toISOString(),
+        lastResult: result,
+        lastError: null,
+        settings: this.pollSettings,
+      };
+      console.log("[Poll] Connection status:", this.connectionStatus);
+    } catch (error) {
+      this.connectionStatus = {
+        connected: false,
+        lastChecked: new Date().toISOString(),
+        lastResult: null,
+        lastError: error.message,
+        settings: this.pollSettings,
+      };
+      console.error("[Poll] Connection error:", error);
+    }
+  }
 
-      // Handle both old format (config) and new format (settings)
-      const config = settings.hostname
-        ? {
-            serverUrl: settings.hostname,
-            port: settings.port,
-            useHttps: settings.useHttps,
-            username: settings.username,
-            password: settings.password,
-          }
-        : settings;
+  /**
+   * Test connection to QBittorrent API
+   * This method replicates the connection test logic without external dependencies
+   */
+  async testConnection(settings) {
+    console.log("=== TESTING CONNECTION ===");
+    console.log("Settings received:", {
+      ...settings,
+      password: settings.password ? "[HIDDEN]" : "",
+    });
 
-      console.log("Processed config:", {
-        ...config,
-        password: config?.password ? "[HIDDEN]" : "",
-      });
+    try {
+      // Validate required settings
+      if (!settings.hostname || !settings.port) {
+        const errorMsg = "Hostname and port are required";
+        console.error("Validation failed:", errorMsg);
+        throw new Error(errorMsg);
+      }
 
-      const protocol = config.useHttps ? "https" : "http";
-      const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
+      // Build URL from settings
+      const protocol = settings.useHttps ? "https" : "http";
+      const baseUrl = `${protocol}://${settings.hostname}:${settings.port}`;
 
       console.log("=== TESTING API CONNECTION ===");
       console.log("Protocol:", protocol);
       console.log("Base URL:", baseUrl);
 
-      // Test version endpoint first - simplest API call
+      // Test version endpoint - simplest API call
       const versionUrl = `${baseUrl}/api/v2/app/version`;
       console.log("Version endpoint URL:", versionUrl);
 
@@ -289,7 +561,7 @@ class QBittorrentBackground {
       console.log("=== CONNECTION SUCCESS ===");
       const result = {
         server_version: version,
-        api_version: "2.0", // QBittorrent API v2
+        api_version: "2.0",
         connected: true,
       };
       console.log("Returning result:", result);
@@ -299,313 +571,16 @@ class QBittorrentBackground {
       console.error("Error object:", error);
       console.error("Error name:", error.name);
       console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
 
-      // Return error for sendResponse to handle
+      // Re-throw with a more user-friendly message
       throw new Error(error.message);
     }
   }
-
-  // New simplified API request handler
-  async makeQBittorrentRequest(
-    settings,
-    endpoint,
-    method = "GET",
-    data = null
-  ) {
-    try {
-      const config = settings.hostname
-        ? {
-            serverUrl: settings.hostname,
-            port: settings.port,
-            useHttps: settings.useHttps,
-            username: settings.username,
-            password: settings.password,
-          }
-        : settings;
-
-      const protocol = config.useHttps ? "https" : "http";
-      const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
-      const url = `${baseUrl}${endpoint}`;
-
-      const requestOptions = {
-        method: method,
-        mode: "cors",
-        credentials: "omit",
-        headers: {
-          Accept: "application/json",
-        },
-      };
-
-      // Add data for POST requests
-      if (method === "POST" && data) {
-        const formData = new FormData();
-        Object.keys(data).forEach((key) => {
-          formData.append(key, data[key]);
-        });
-        requestOptions.body = formData;
-      }
-
-      const response = await fetch(url, requestOptions);
-
-      if (!response.ok) {
-        throw new Error(`API request failed: HTTP ${response.status}`);
-      }
-
-      // Handle different response types
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        return await response.json();
-      } else {
-        return await response.text();
-      }
-    } catch (error) {
-      console.error("QBittorrent API request failed:", error);
-      throw error;
-    }
-  }
-
-  async testAuthentication(config, baseUrl) {
-    try {
-      const loginUrl = `${baseUrl}/api/v2/auth/login`;
-      const formData = new FormData();
-      formData.append("username", config.username);
-      formData.append("password", config.password);
-
-      const response = await fetch(loginUrl, {
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const result = await response.text();
-        if (result === "Ok.") {
-          return { success: true };
-        } else {
-          return { success: false, error: "Invalid username or password" };
-        }
-      } else {
-        return {
-          success: false,
-          error: `Authentication failed: HTTP ${response.status}`,
-        };
-      }
-    } catch (error) {
-      return {
-        success: false,
-        error: `Authentication error: ${error.message}`,
-      };
-    }
-  }
-
-  async makeQBittorrentRequest(requestData) {
-    const config = await this.getConfig();
-    const protocol = config.useHttps ? "https" : "http";
-    const baseUrl = `${protocol}://${config.serverUrl}:${config.port}`;
-
-    try {
-      // Login first if needed and credentials are available
-      if (requestData.requiresAuth && config.username && config.password) {
-        const authResult = await this.login(config, baseUrl);
-        if (!authResult.success) {
-          throw new Error(`Authentication failed: ${authResult.error}`);
-        }
-      }
-
-      const requestHeaders = {
-        "User-Agent": "QBittorrent-Remote-Extension/1.0",
-        ...requestData.headers,
-      };
-
-      const response = await fetch(`${baseUrl}${requestData.endpoint}`, {
-        method: requestData.method || "GET",
-        mode: "cors",
-        credentials: "include",
-        headers: requestHeaders,
-        body: requestData.body,
-      });
-
-      if (response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          return await response.json();
-        } else {
-          const text = await response.text();
-          return text.trim();
-        }
-      } else {
-        throw new Error(
-          `QBittorrent API error: HTTP ${response.status} - ${response.statusText}`
-        );
-      }
-    } catch (error) {
-      console.error("QBittorrent API request failed:", error);
-      throw new Error(`API request failed: ${error.message}`);
-    }
-  }
-
-  async login(config, baseUrl) {
-    try {
-      const url = `${baseUrl}/api/v2/auth/login`;
-
-      const formData = new FormData();
-      formData.append("username", config.username);
-      formData.append("password", config.password);
-
-      const response = await fetch(url, {
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
-        body: formData,
-        headers: {
-          "User-Agent": "QBittorrent-Remote-Extension/1.0",
-        },
-      });
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: `Login request failed: HTTP ${response.status}`,
-        };
-      }
-
-      const result = await response.text();
-      if (result.trim() === "Ok.") {
-        return { success: true };
-      } else {
-        return { success: false, error: "Invalid credentials" };
-      }
-    } catch (error) {
-      return { success: false, error: `Login error: ${error.message}` };
-    }
-  }
-
-  /**
-   * Handle adding magnet link to QBittorrent
-   */
-  async handleAddMagnet(magnetUrl, options = {}) {
-    try {
-      // Load settings and authenticate
-      const hasSettings = await this.qbApi.loadSettings();
-      if (!hasSettings) {
-        return {
-          success: false,
-          error:
-            "QBittorrent not configured. Please set up connection in options.",
-        };
-      }
-
-      // Test connection first
-      const version = await this.qbApi.testConnection();
-      if (!version) {
-        return {
-          success: false,
-          error:
-            "Cannot connect to QBittorrent. Check your connection settings.",
-        };
-      }
-
-      // Add the magnet link
-      const success = await this.qbApi.addMagnet(magnetUrl, options);
-
-      if (success) {
-        // Show success notification
-        this.showNotification("Torrent added successfully!", "success");
-
-        // Update icon to show activity (optional)
-        this.updateIconForActivity();
-
-        return { success: true, message: "Torrent added successfully" };
-      } else {
-        return {
-          success: false,
-          error: "Failed to add torrent to QBittorrent",
-        };
-      }
-    } catch (error) {
-      console.error("Error adding magnet:", error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Get magnet handling settings
-   */
-  async getMagnetSettings() {
-    try {
-      const result = await browser.storage.local.get("magnet_settings");
-      return (
-        result.magnet_settings || {
-          enableMagnetHandling: true,
-          autoAddMagnets: false,
-          defaultCategory: "",
-          defaultSavePath: "",
-          showNotifications: true,
-        }
-      );
-    } catch (error) {
-      console.error("Failed to get magnet settings:", error);
-      return {};
-    }
-  }
-
-  /**
-   * Save magnet handling settings
-   */
-  async saveMagnetSettings(settings) {
-    try {
-      await browser.storage.local.set({ magnet_settings: settings });
-    } catch (error) {
-      console.error("Failed to save magnet settings:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Show browser notification
-   */
-  showNotification(message, type = "info") {
-    if (browser.notifications) {
-      browser.notifications.create({
-        type: "basic",
-        iconUrl: browser.runtime.getURL("icons/icon-48.png"),
-        title: "QBittorrent Remote",
-        message: message,
-      });
-    }
-  }
-
-  /**
-   * Update extension icon to show activity
-   */
-  updateIconForActivity() {
-    // Set icon to active state
-    browser.action.setIcon({
-      path: {
-        16: "icons/icon-16-active.png",
-        32: "icons/icon-32-active.png",
-        48: "icons/icon-48-active.png",
-      },
-    });
-
-    // Reset to normal after 3 seconds
-    setTimeout(() => {
-      browser.action.setIcon({
-        path: {
-          16: "icons/icon-16.png",
-          32: "icons/icon-32.png",
-          48: "icons/icon-48.png",
-        },
-      });
-    }, 3000);
-  }
 }
 
-// Initialize background script
-console.log("=== INITIALIZING BACKGROUND SCRIPT ===");
+// Initialize the background script
 try {
+  console.log("=== INITIALIZING BACKGROUND SCRIPT ===");
   const backgroundInstance = new QBittorrentBackground();
   console.log(
     "Background script initialized successfully:",

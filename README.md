@@ -1,33 +1,12 @@
-# QBittorrent Remote Connection
+# Icon Placeholder
 
-A Firefox extension for managing remote QBittorrent connections.
+This directory should contain the extension icons in the following sizes:
 
-## Description
+- icon-16.png (16x16 pixels)
+- icon-32.png (32x32 pixels)
+- icon-48.png (48x48 pixels)
+- icon-128.png (128x128 pixels)
 
-This Firefox extension allows users to remotely connect to and manage their QBittorrent client from their browser. The extension provides an easy-to-use interface for monitoring and controlling torrent downloads.
+You can create these icons using any image editing software. The icons should represent QBittorrent or torrent downloading.
 
-## Features
-
-🚧 **Work in Progress** - This extension is currently under development.
-
-Planned features:
-- Remote connection to QBittorrent Web UI
-- Quick torrent management
-- Download status monitoring
-- Easy access to torrent controls
-
-## Installation
-
-Coming soon...
-
-## Development
-
-This project is in early development stage. More information will be added as development progresses.
-
-## License
-
-To be determined
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
+For now, you can use any placeholder icons or create simple ones with the QBittorrent logo or a download/torrent symbol.

@@ -21,13 +21,18 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content/test.js"],
+      "js": ["content/contentScript.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/contentScript.js"],
       "run_at": "document_end"
     }
   ],
   
   "background": {
-    "scripts": ["background-simple.js"],
+    "scripts": ["background.js"],
     "persistent": true
   },
   
@@ -45,6 +50,7 @@
     "icons/*",
     "vendor/bootstrap/*",
     "vendor/bootstrap-icons/*",
-    "modules/*.js"
+    "modules/*.js",
+    "notifications/*.js"
   ]
 }
